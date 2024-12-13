@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer
 from fuzzywuzzy import fuzz
 import nltk
 import numpy as np
@@ -33,9 +33,8 @@ class SelfHealingFramework:
         self.logger = logger
         self.mappings = self._load_mappings(mapping_file_path)
         self.healing_history = {}
-        self.vectorizer = TfidfVectorizer(lowercase=True)
         self.lemmatizer = WordNetLemmatizer()
-        # Weights for different similarity components
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.weights = {
             'semantic': 0.3,
             'structural': 0.4,
@@ -213,7 +212,7 @@ class SelfHealingFramework:
         return elements
 
     def _find_best_match(self, original_attributes: dict, page_elements: list):
-        """Find the most similar element using enhanced matching"""
+        """Find the most similar element using enhanced matching with sentence transformers"""
         if not page_elements:
             return None
 
@@ -224,25 +223,24 @@ class SelfHealingFramework:
         original_text = self._attributes_to_text(original_attributes)
         original_struct = self._get_structural_features(original_attributes)
 
-        # Preprocess all texts for TF-IDF
+        # Prepare texts for embedding
         texts = [original_text]
-        elements_texts = []
         for element_data in page_elements:
             current_text = self._attributes_to_text(element_data['attributes'])
             texts.append(current_text)
-            elements_texts.append(current_text)
 
-        # Calculate TF-IDF vectors
-        tfidf_matrix = self.vectorizer.fit_transform(texts)
-        original_vector = tfidf_matrix[0]
-        element_vectors = tfidf_matrix[1:]
+        # Calculate embeddings for all texts
+        embeddings = self.model.encode(texts)
+        original_embedding = embeddings[0].reshape(1, -1)
+        element_embeddings = embeddings[1:]
 
         for idx, element_data in enumerate(page_elements):
             try:
                 current_struct = self._get_structural_features(element_data['attributes'])
 
-                # Calculate semantic similarity using TF-IDF
-                semantic_score = float(cosine_similarity(original_vector, element_vectors[idx])[0])
+                # Calculate semantic similarity using sentence transformers
+                current_embedding = element_embeddings[idx].reshape(1, -1)
+                semantic_score = float(self.model.similarity(original_embedding, current_embedding)[0][0])
 
                 # Calculate structural similarity
                 structural_score = self._calculate_structural_similarity(
