@@ -79,8 +79,6 @@ class SelfHealingFramework:
             self.logger.warning(f"Visual model initialization failed: {e}")
             return None
 
-
-
     def find_element(self, bdd_step: str, timeout: int = 10):
         """Enhanced element finding with parallel healing strategies"""
         if bdd_step not in self.mappings:
@@ -214,7 +212,6 @@ class SelfHealingFramework:
             self.logger.error(f"Failed to get page elements: {e}")
         
         return elements
-
 
     def _visual_matching(self, element_info: dict, page_elements: list):
         """Enhanced visual matching with context awareness"""
@@ -438,8 +435,6 @@ class SelfHealingFramework:
             self.logger.debug(f"Feature matching failed: {e}")
             return 0.0
         
-
-
     def _semantic_matching(self, element_info: dict, page_elements: list):
         """Enhanced semantic matching with caching"""
         try:
@@ -612,6 +607,82 @@ class SelfHealingFramework:
             self.logger.info("Framework closed successfully")
         except Exception as e:
             self.logger.error(f"Failed to close framework: {e}")
+
+    def _load_mappings(self, mapping_file_path: str) -> dict:
+        """Load element mappings from CSV or JSON file"""
+        try:
+            if mapping_file_path.endswith('.csv'):
+                return self._load_csv_mappings(mapping_file_path)
+            elif mapping_file_path.endswith('.json'):
+                return self._load_json_mappings(mapping_file_path)
+            else:
+                raise ValueError("Unsupported mapping file format. Use CSV or JSON.")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to load mappings: {e}")
+            return {}
+
+    def _load_csv_mappings(self, file_path: str) -> dict:
+        """Load mappings from CSV file"""
+        try:
+            df = pd.read_csv(file_path)
+            mappings = {}
+            for _, row in df.iterrows():
+                mappings[row['bdd_step']] = {
+                    'element_id': row.get('element_id', ''),
+                    'locator_strategies': {
+                        strategy: value for strategy, value in row.items()
+                        if strategy not in ['bdd_step', 'element_id'] and pd.notna(value)
+                    },
+                    'attributes': json.loads(row.get('attributes', '{}'))
+                }
+            return mappings
+        except Exception as e:
+            self.logger.error(f"Failed to load CSV mappings: {e}")
+            return {}
+
+    def _load_json_mappings(self, file_path: str) -> dict:
+        """Load mappings from JSON file"""
+        try:
+            with open(file_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to load JSON mappings: {e}")
+            return {}
+
+    def start_browser(self, browser_type: str = 'chrome'):
+        """Initialize webdriver"""
+        try:
+            if browser_type.lower() == 'chrome':
+                self.driver = webdriver.Chrome()
+            elif browser_type.lower() == 'firefox':
+                self.driver = webdriver.Firefox()
+            else:
+                raise ValueError(f"Unsupported browser type: {browser_type}")
+                
+            self.driver.maximize_window()
+            self.logger.info(f"Started {browser_type} browser successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to start browser: {e}")
+            raise
+
+    def execute_all_steps(self, delay: float = 1.0):
+        """Execute all mapped steps in sequence"""
+        try:
+            for bdd_step in self.mappings.keys():
+                self.logger.info(f"Executing step: {bdd_step}")
+                element = self.find_element(bdd_step)
+                if element:
+                    # Basic interaction based on element type
+                    if element.tag_name in ['input', 'textarea']:
+                        element.send_keys('test input')
+                    elif element.tag_name in ['button', 'a']:
+                        element.click()
+                    time.sleep(delay)
+                else:
+                    self.logger.warning(f"Failed to find element for step: {bdd_step}")
+        except Exception as e:
+            self.logger.error(f"Step execution failed: {e}")
 
 def main():
     """Example usage of the enhanced framework"""
