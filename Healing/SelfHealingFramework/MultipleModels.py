@@ -615,8 +615,12 @@ class SelfHealingFramework:
 
 def main():
     """Example usage of the enhanced framework"""
+    framework = None
     try:
-        framework = SelfHealingFramework('./bdd_element_mapping.csv')
+        # Initialize framework with mapping file
+        framework = SelfHealingFramework('./bdd_element_mapping.json')
+        
+        # Start browser
         framework.start_browser()
         
         # Navigate to application
@@ -631,7 +635,9 @@ def main():
     except Exception as e:
         logging.error(f"Main execution failed: {e}")
     finally:
-        framework.close()
+        # Safely close framework if it was initialized
+        if framework is not None:
+            framework.close()
 
 if __name__ == "__main__":
     main()
