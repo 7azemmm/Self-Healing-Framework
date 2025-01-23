@@ -58,7 +58,7 @@ class SelfHealingFramework:
         mappings = {}
         for _, row in df.iterrows():
             bdd_step = row['BDD Step'].strip()
-            element_id = row['Element ID'].strip()
+            element_id = row['element_id'].strip()
             mappings[bdd_step] = {
                 'element_id': element_id,
                 'locator_strategies': self._generate_locator_strategies(element_id)
@@ -222,32 +222,11 @@ class SelfHealingFramework:
             'text': element_info.get('text')
         }
 
-    def _get_all_page_elements(self) -> list:
-        """Get all elements from current page with their attributes."""
-        elements = []
-        for element in self.driver.find_elements(By.XPATH, "//*"):
-            try:
-                elements.append({
-                    'element': element,
-                    'attributes': {
-                        'id': element.get_attribute('id'),
-                        'tag_name': element.tag_name,
-                        'class_name': element.get_attribute('class'),
-                        'text': element.text,
-                        'type': element.get_attribute('type'),
-                        'name': element.get_attribute('name')
-                    }
-                })
-            except Exception as e:
-                self.logger.debug(f"Failed to extract attributes for element: {e}")
-                continue
-        return elements
-
     def _find_best_match(self, original_attributes: dict, page_elements: list):
         """Find the most similar element on the page using ML."""
         best_match = None
         best_score = 0
-        threshold = 0.6
+        threshold = 0.3
 
         original_text = self._attributes_to_text(original_attributes)
         original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
@@ -311,6 +290,55 @@ class SelfHealingFramework:
         """Clean up resources."""
         if self.driver:
             self.driver.quit()
+
+    def _get_all_page_elements(self) -> list:
+        """Get all elements from the current page with their attributes, excluding labels and divs."""
+        elements = []
+        for element in self.driver.find_elements(By.XPATH, "//*"):
+            try:
+                # Skip elements with the tag name 'label' or 'div'
+                tag_name = element.tag_name.lower()
+                if tag_name == 'label' or tag_name == 'div':
+                    continue
+
+                # Generate the XPath of the element
+                xpath = self._get_xpath(element)
+
+                element_data = {
+                    'element': element,
+                    'attributes': {
+                        'id': element.get_attribute('id'),
+                        'tag_name': element.tag_name,
+                        'class_name': element.get_attribute('class'),
+                        'text': element.text,
+                        'type': element.get_attribute('type'),
+                        'name': element.get_attribute('name'),
+                        'xpath': xpath  # Add XPath to the attributes
+                    }
+                }
+                elements.append(element_data)
+            except Exception as e:
+                self.logger.debug(f"Failed to extract attributes for element: {e}")
+                continue
+        return elements
+
+    def _get_xpath(self, element) -> str:
+        """Generate the XPath of the given element."""
+        xpath = ""
+        current_element = element
+        while current_element.tag_name.lower() != "html":
+            tag_name = current_element.tag_name.lower()
+            parent = current_element.find_element(By.XPATH, "..")
+            siblings = parent.find_elements(By.XPATH, f"./{tag_name}")
+
+            if len(siblings) == 1:
+                xpath = f"/{tag_name}{xpath}"
+            else:
+                index = siblings.index(current_element) + 1
+                xpath = f"/{tag_name}[{index}]{xpath}"
+
+            current_element = parent
+        return f"/html{xpath}"
 
 # Example usage
 def main():
