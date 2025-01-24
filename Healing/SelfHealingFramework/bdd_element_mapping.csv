@@ -1,8 +1,0 @@
-BDD Step,Element ID
-When the user clicks the submit button without filling any inputs,submit
-When the user enters their email,email
-When the user enters their password,input-password
-When the user checks the remember me checkbox,checkbox-remember
-When the user choose the Option 2 option,radio-option2
-When the user enters their address,Address
-When the user clicks submit button,submit

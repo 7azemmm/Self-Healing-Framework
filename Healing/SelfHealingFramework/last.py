@@ -1,3 +1,8 @@
+from bs4 import BeautifulSoup
+import os
+from shared import tokenizer, model
+import torch
+from transformers import pipeline
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -17,6 +22,162 @@ from symspellpy import SymSpell
 # Set up logging configuration
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def process_html(directory_path):
+    """
+    Process HTML files in a directory, extract elements, and generate embeddings and semantic descriptions.
+    Includes all possible identifiers for each element (e.g., id, class, name, XPath, CSS selector, etc.).
+    """
+    html_pages = {}
+    try:
+        summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    except Exception as e:
+        print(f"Failed to load summarization model: {e}")
+        summarizer = None  # Fallback to no summarization
+
+    # List of interactive HTML elements to include
+    interactive_elements = [
+        "input",  # Includes text, password, checkbox, radio, etc.
+        "select",  # Dropdowns
+        "button",  # Buttons
+        "textarea",  # Multi-line text input
+        "a",  # Links (if they are interactive)
+        "label",  # Labels (if they are associated with inputs)
+        "option",  # Options within a select element
+        "datalist",  # Data list for input suggestions
+        "fieldset",  # Grouping related elements
+        "legend",  # Caption for fieldset
+        "output",  # Output of a calculation
+        "progress",  # Progress bar
+        "meter",  # Scalar measurement
+    ]
+
+    for file_name in os.listdir(directory_path):
+        if file_name.endswith(".html"):
+            with open(os.path.join(directory_path, file_name), "r", encoding="utf-8") as file:
+                soup = BeautifulSoup(file, "html.parser")
+            
+            # Extract interactive elements of interest
+            elements = []
+            for tag in soup.find_all(interactive_elements):  # Focus on interactive elements
+                # Extract basic attributes
+                attributes = {
+                    "role": tag.name,
+                    "id": tag.get("id"),
+                    "name": tag.get("name"),
+                    "type": tag.get("type"),
+                    "value": tag.get("value"),  # Add value attribute
+                    "class": tag.get("class"),
+                    "text": tag.text.strip(),
+                    "placeholder": tag.get("placeholder", ""),  # Include placeholder
+                    "parent": tag.parent.name if tag.parent else None,
+                    "siblings": [sibling.name for sibling in tag.find_previous_siblings()]
+                }
+
+                # Generate XPath and CSS selector for the element
+                xpath_absolute = get_xpath(tag, absolute=True)
+                xpath_relative = get_xpath(tag, absolute=False)
+                css_selector = get_css_selector(tag)
+
+                # Add XPath and CSS selector to attributes
+                attributes["xpath_absolute"] = xpath_absolute
+                attributes["xpath_relative"] = xpath_relative
+                attributes["css_selector"] = css_selector
+
+                # Create a text representation of the element
+                element_text = (
+                    f"{attributes['role']} "
+                    f"id={attributes['id']} "
+                    f"name={attributes['name']} "
+                    f"type={attributes['type']} "
+                    f"value={attributes['value']} "  # Include value in the text representation
+                    f"text={attributes['text']} "
+                    f"placeholder={attributes['placeholder']} "
+                    f"parent={attributes['parent']} "
+                    f"siblings={attributes['siblings']} "
+                    f"xpath_absolute={attributes['xpath_absolute']} "
+                    f"xpath_relative={attributes['xpath_relative']} "
+                    f"css_selector={attributes['css_selector']} "
+                )
+                
+                # Generate embedding for the element
+                embedding = get_embedding(element_text)
+                description = generate_semantic_description(element_text, summarizer)  # Generate semantic description
+                elements.append({
+                    "content": str(tag),
+                    "attributes": attributes,
+                    "embedding": embedding,
+                    "description": description
+                })
+            
+            # Generate embedding for the entire HTML page
+            page_text = soup.get_text()
+            page_embedding = get_embedding(page_text)
+            page_description = generate_semantic_description(page_text, summarizer)  # Generate semantic description
+            html_pages[file_name] = {
+                "elements": elements,
+                "embedding": page_embedding,
+                "description": page_description
+            }
+    
+    return html_pages
+
+def get_embedding(text):
+    """
+    Generate embeddings for a given text using the E5 model.
+    """
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1)  # Average pooling
+
+def generate_semantic_description(text, summarizer):
+    """
+    Generate a semantic description of a text using a summarization model.
+    """
+    if summarizer:
+        input_length = len(text.split())
+        max_length = min(50, input_length)
+        min_length = min(25, max_length // 2)
+        description = summarizer(text, max_length=max_length, min_length=min_length, do_sample=False)[0]['summary_text']
+        return description
+    else:
+        return "No description available"
+
+def get_xpath(tag, absolute=True):
+    """
+    Generate XPath for a given tag.
+    If absolute=True, returns the absolute XPath.
+    If absolute=False, returns the relative XPath.
+    """
+    path = []
+    current = tag
+    while current:
+        if current.name:
+            # Get the tag name
+            tag_name = current.name
+            # Get the index of the current tag among its siblings
+            siblings = [sibling for sibling in current.parent.find_all(tag_name, recursive=False)] if current.parent else []
+            index = siblings.index(current) + 1 if siblings else 1
+            # Append the tag name and index to the path
+            path.append(f"{tag_name}[{index}]")
+        current = current.parent
+    # Reverse the path to get the correct order
+    path.reverse()
+    # Join the path with '/' for absolute XPath or './' for relative XPath
+    xpath = "/" + "/".join(path) if absolute else "./" + "/".join(path)
+    return xpath
+
+def get_css_selector(tag):
+    """
+    Generate a CSS selector for a given tag.
+    """
+    selector = tag.name
+    if tag.get("id"):
+        selector += f"#{tag.get('id')}"
+    elif tag.get("class"):
+        selector += "." + ".".join(tag.get("class"))
+    return selector
 
 class RLHealingAgent:
     """Reinforcement learning agent for strategy selection."""
@@ -39,6 +200,7 @@ class RLHealingAgent:
         strategy_index = self.strategies.index(strategy)
         self.q_table[strategy_index] += self.learning_rate * (reward - self.q_table[strategy_index])
 
+
 class SelfHealingFramework:
     def __init__(self, mapping_file_path: str):
         self.driver = None
@@ -59,25 +221,19 @@ class SelfHealingFramework:
         for _, row in df.iterrows():
             bdd_step = row['BDD Step'].strip()
             element_id = row['element_id'].strip()
-            css = row['css'].strip()
-            xpath = row['xpath'].strip()
-            full_xpath = row['full_xpath'].strip()
             mappings[bdd_step] = {
                 'element_id': element_id,
-                'css': css,
-                'xpath': xpath,
-                'full_xpath': full_xpath,
-                'locator_strategies': self._generate_locator_strategies(element_id, css, xpath, full_xpath)
+                'locator_strategies': self._generate_locator_strategies(element_id)
             }
         return mappings
 
-    def _generate_locator_strategies(self, element_id: str, css: str = None, xpath: str = None, full_xpath: str = None) -> dict:
+    def _generate_locator_strategies(self, element_id: str) -> dict:
         """Generate multiple locator strategies for an element."""
         return {
             'id': element_id,
-            'css': css or f'#{element_id}',  # Generate CSS from ID if not provided
-            'xpath': xpath or f"//*[@id='{element_id}']",  # Generate XPath from ID if not provided
-            'full_xpath': full_xpath  # This can be None if not available
+            'css': f'#{element_id}',
+            'xpath': f'//*[@id="{element_id}"]',
+            'xpath_contains': f'//*[contains(@id, "{element_id}")]'
         }
 
     def execute_all_steps(self, delay=1.5):
@@ -205,8 +361,13 @@ class SelfHealingFramework:
     def _heal_element(self, element_info: dict):
         """Attempt to heal a broken element locator."""
         try:
+            # Get the current page's HTML source
+            page_source = self.driver.page_source
+            # Process the HTML to extract elements and their embeddings
+            soup = BeautifulSoup(page_source, "html.parser")
+            page_elements = self._process_html_from_soup(soup)
+
             original_attributes = self._get_original_attributes(element_info)
-            page_elements = self._get_all_page_elements()
 
             best_match = self._find_best_match(original_attributes, page_elements)
             if best_match:
@@ -218,6 +379,45 @@ class SelfHealingFramework:
         except Exception as e:
             self.logger.error(f"Error during healing process: {e}")
         return None
+
+    def _process_html_from_soup(self, soup):
+        """Process HTML from BeautifulSoup object to extract elements."""
+        elements = []
+        interactive_elements = [
+            "input", "select", "button", "textarea", "a", "label", "option",
+            "datalist", "fieldset", "legend", "output", "progress", "meter"
+        ]
+        for tag in soup.find_all(interactive_elements):
+            attributes = {
+                "role": tag.name,
+                "id": tag.get("id"),
+                "name": tag.get("name"),
+                "type": tag.get("type"),
+                "value": tag.get("value"),
+                "class": tag.get("class"),
+                "text": tag.text.strip(),
+                "placeholder": tag.get("placeholder", ""),
+                "parent": tag.parent.name if tag.parent else None,
+                "siblings": [sibling.name for sibling in tag.find_previous_siblings()]
+            }
+            element_text = (
+                f"{attributes['role']} "
+                f"id={attributes['id']} "
+                f"name={attributes['name']} "
+                f"type={attributes['type']} "
+                f"value={attributes['value']} "
+                f"text={attributes['text']} "
+                f"placeholder={attributes['placeholder']} "
+                f"parent={attributes['parent']} "
+                f"siblings={attributes['siblings']} "
+            )
+            embedding = get_embedding(element_text)
+            elements.append({
+                "element": tag,
+                "attributes": attributes,
+                "embedding": embedding
+            })
+        return elements
 
     def _get_original_attributes(self, element_info: dict) -> dict:
         """Get original element attributes from stored information."""
@@ -257,17 +457,7 @@ class SelfHealingFramework:
     def _update_locator_strategies(self, element_info: dict, new_element: dict):
         """Update stored locator strategies with new information."""
         new_id = new_element['attributes']['id']
-        new_xpath = new_element['attributes'].get('xpath')
-        
-        # Generate CSS selector based on available attributes
-        css_selector = f"#{new_id}" if new_id else None
-        
-        new_strategies = self._generate_locator_strategies(
-            element_id=new_id,
-            css=css_selector,
-            xpath=new_xpath,
-            full_xpath=new_xpath
-        )
+        new_strategies = self._generate_locator_strategies(new_id)
 
         self.healing_history[element_info['element_id']] = {
             'timestamp': datetime.now().isoformat(),
@@ -356,8 +546,14 @@ class SelfHealingFramework:
             current_element = parent
         return f"/html{xpath}"
 
+
 # Example usage
 def main():
+    # Process HTML files
+    # html_pages = process_html('./htmlexamples')
+    # print(json.dumps(html_pages, indent=2))
+
+    # Execute self-healing framework
     framework = SelfHealingFramework('./mapping.csv')
     framework.start_browser()
     try:
@@ -369,3 +565,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

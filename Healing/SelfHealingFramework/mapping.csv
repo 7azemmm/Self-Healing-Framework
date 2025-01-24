@@ -1,0 +1,5 @@
+BDD Step,element_id,css,xpath,full_xpath
+When the user enters their email,input-email,#iemail,//*[@id="iemail"],/html/body/form/input[2]
+When the user enters their password,password,#password,//*[@id="passw-input"],/html/body/form/input[2]
+When the user enters their address,Address,#Address,//*[@id="address"],/html/body/form/input[3]
+When the user clicks submit button,submit,#submit,//*[@id="submit"],/html/body/form/button[2]
