@@ -1,0 +1,27 @@
+{
+  "input-email": {
+    "timestamp": "2025-01-30T15:15:41.377628",
+    "original_strategies": {
+      "id": "input-email",
+      "css": "#iemail",
+      "xpath": "//*[@id=\"iemail\"]",
+      "full_xpath": "/html/body/form/input[2]"
+    },
+    "new_strategies": {
+      "id": "email",
+      "css": "#email",
+      "xpath": "/html/body/form/input[1]",
+      "full_xpath": "/html/body/form/input[1]"
+    },
+    "matched_attributes": {
+      "id": "email",
+      "tag_name": "input",
+      "class_name": "",
+      "text": "",
+      "type": "email",
+      "name": "email",
+      "xpath": "/html/body/form/input[1]"
+    },
+    "note": "This element was not found in the latest BDD mapping and was healed."
+  }
+}

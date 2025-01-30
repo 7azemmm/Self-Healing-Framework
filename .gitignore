@@ -1,1 +1,5 @@
 .venv/
+framework.log
+settings.json
+mapping.csv.bak
+healing_report.json

@@ -39,9 +39,9 @@ class SelfHealingFramework:
             df = pd.read_csv(file_path)
             return {
                 row['BDD Step'].strip(): {
-                    'element_id': row['Element ID'].strip(),
-                    'locator_strategies': self._generate_locator_strategies(row['Element ID'].strip()),
-                    'context': self._create_element_context(row['BDD Step'], row['Element ID'])
+                    'element_id': row['element_id'].strip(),
+                    'locator_strategies': self._generate_locator_strategies(row['element_id'].strip()),
+                    'context': self._create_element_context(row['BDD Step'], row['element_id'])
                 }
                 for _, row in df.iterrows()
             }
@@ -464,9 +464,9 @@ class SelfHealingFramework:
             logger.info("Browser session terminated")
 
 if __name__ == "__main__":
-    framework = SelfHealingFramework("./bdd_element_mapping.csv")
+    framework = SelfHealingFramework("./mapping.csv")
     try:
-        framework.start_browser("http://127.0.0.1:8000/index.html")
+        framework.start_browser("http://127.0.0.1:5587/htmlexamples/htmlexamples/index.html")
         framework.execute_all_steps()
         framework.save_report()
     except Exception as e:

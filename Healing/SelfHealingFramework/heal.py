@@ -45,7 +45,7 @@ class SelfHealingFramework:
         self.logger = logger
         self.mappings = self._load_mappings(mapping_file_path)
         self.healing_history = {}
-        self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')  # NLP model for semantic matching
+        self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
         self.rl_agent = RLHealingAgent(['id', 'css', 'xpath', 'xpath_contains'])  # RL agent for strategy selection
         self.element_cache = {}  # Cache for frequently accessed elements
         self.sym_spell = SymSpell()  # Error correction for BDD steps
@@ -361,7 +361,7 @@ def main():
     framework = SelfHealingFramework('./mapping.csv')
     framework.start_browser()
     try:
-        framework.driver.get("http://127.0.0.1:5500/htmlexamples/htmlexamples/index.html")
+        framework.driver.get("http://127.0.0.1:5587/htmlexamples/htmlexamples/index.html")
         framework.execute_all_steps(delay=2.0)
         framework.save_report("reports.json")
     finally:
