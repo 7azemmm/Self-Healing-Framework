@@ -255,6 +255,8 @@
 
 
 
+
+
 from bs4 import BeautifulSoup
 import os
 from shared import tokenizer, model
@@ -271,12 +273,23 @@ def process_html(directory_path):
         summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
     except Exception as e:
         print(f"Failed to load summarization model: {e}")
-        summarizer = None
+        summarizer = None  # Fallback to no summarization
 
+    # List of interactive HTML elements to include
     interactive_elements = [
-        "input", "select", "button", "textarea", "a", "label",
-        "option", "datalist", "fieldset", "legend", "output",
-        "progress", "meter"
+        "input",  # Includes text, password, checkbox, radio, etc.
+        "select",  # Dropdowns
+        "button",  # Buttons
+        "textarea",  # Multi-line text input
+        "a",  # Links (if they are interactive)
+        "label",  # Labels (if they are associated with inputs)
+        "option",  # Options within a select element
+        "datalist",  # Data list for input suggestions
+        "fieldset",  # Grouping related elements
+        "legend",  # Caption for fieldset
+        "output",  # Output of a calculation
+        "progress",  # Progress bar
+        "meter",  # Scalar measurement
     ]
 
     for file_name in os.listdir(directory_path):
@@ -284,17 +297,19 @@ def process_html(directory_path):
             with open(os.path.join(directory_path, file_name), "r", encoding="utf-8") as file:
                 soup = BeautifulSoup(file, "html.parser")
             
+            # Extract interactive elements of interest
             elements = []
             for tag in soup.find_all(interactive_elements):
+                # Extract basic attributes
                 attributes = {
                     "role": tag.name,
                     "id": tag.get("id"),
                     "name": tag.get("name"),
                     "type": tag.get("type"),
-                    "value": tag.get("value"),
+                    "value": tag.get("value"),  # Add value attribute
                     "class": tag.get("class"),
                     "text": tag.text.strip(),
-                    "placeholder": tag.get("placeholder", ""),
+                    "placeholder": tag.get("placeholder", ""),  # Include placeholder
                     "parent": tag.parent.name if tag.parent else None,
                     "siblings": [sibling.name for sibling in tag.find_previous_siblings()]
                 }
@@ -311,7 +326,7 @@ def process_html(directory_path):
                             "option_text": tag.text.strip()
                         })
 
-                # Generate selectors
+                # Generate XPath and CSS selector for the element
                 attributes["xpath_absolute"] = get_xpath(tag, absolute=True)
                 attributes["xpath_relative"] = get_xpath(tag, absolute=False)
                 attributes["css_selector"] = (
@@ -320,7 +335,7 @@ def process_html(directory_path):
                     else get_css_selector(tag)
                 )
 
-                # Build element text
+                # Create a text representation of the element
                 element_text = (
                     f"{attributes['role']} "
                     f"id={attributes['id']} "
@@ -341,20 +356,20 @@ def process_html(directory_path):
                         f"parent_select={attributes.get('parent_select_id', '')} "
                     )
 
-                # Generate embeddings
+                # Generate embedding for the element
                 embedding = get_embedding(element_text)
-                description = generate_semantic_description(element_text, summarizer)
+                description = generate_semantic_description(element_text, summarizer)  # Generate semantic description
                 elements.append({
                     "content": str(tag),
                     "attributes": attributes,
                     "embedding": embedding,
                     "description": description
                 })
-
-            # Page-level processing
+            
+            # Generate embedding for the entire HTML page
             page_text = soup.get_text()
             page_embedding = get_embedding(page_text)
-            page_description = generate_semantic_description(page_text, summarizer)
+            page_description = generate_semantic_description(page_text, summarizer)  # Generate semantic description
             html_pages[file_name] = {
                 "elements": elements,
                 "embedding": page_embedding,
@@ -362,7 +377,6 @@ def process_html(directory_path):
             }
     
     return html_pages
-
 
 def get_embedding(text):
     """
