@@ -179,10 +179,19 @@
 #         outputs = model(**inputs)
 #     return outputs.last_hidden_state.mean(dim=1)  # Average pooling
 
+
 from torch.nn.functional import cosine_similarity
 from shared import tokenizer, model
 import torch
 from fuzzywuzzy import fuzz  # For fuzzy string matching
+from transformers import pipeline  # For summarization
+
+# Initialize the summarization model
+try:
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+except Exception as e:
+    print(f"Failed to load summarization model: {e}")
+    summarizer = None  # Fallback to no summarization
 
 def map_bdd_to_html(bdd_scenario, html_pages):
     """
@@ -223,21 +232,24 @@ def map_bdd_to_html(bdd_scenario, html_pages):
         # Only include "When" and "And" steps that contain action keywords
         if step.lower().startswith(("when", "and")) and any(keyword in step.lower() for keyword in action_keywords):
             step_embedding = get_embedding(step)
+            step_description = generate_semantic_description(step, summarizer)  # Generate description for the step
+            step_description_embedding = get_embedding(step_description)  # Embedding for the step description
+
             best_match = None
             best_similarity = -1  # Initialize with a low value
-
-            # Check if the step involves selecting an option from a dropdown
-            is_dropdown_selection = (
-                "select" in step.lower() and 
-                "from" in step.lower() and 
-                "dropdown" in step.lower()
-            )
 
             # Find the best matching element across all HTML pages
             for page, page_data in html_pages.items():
                 for element in page_data["elements"]:
                     element_embedding = element["embedding"]
-                    element_similarity = cosine_similarity(step_embedding, element_embedding).item()
+                    element_description_embedding = get_embedding(element["description"])  # Embedding for element description
+
+                    # Combine step and element embeddings with their descriptions
+                    step_similarity = cosine_similarity(step_embedding, element_embedding).item()
+                    description_similarity = cosine_similarity(step_description_embedding, element_description_embedding).item()
+
+                    # Combine similarities (e.g., 70% step, 30% description)
+                    combined_similarity = (step_similarity * 0.7) + (description_similarity * 0.3)
 
                     # Add fuzzy matching for label text, id, name, placeholder, and type
                     attributes = element.get("attributes", {})
@@ -259,13 +271,12 @@ def map_bdd_to_html(bdd_scenario, html_pages):
                     option_text_match_score = fuzz.partial_ratio(step.lower(), option_text.lower())
 
                     # Combine semantic similarity with fuzzy match scores
-                    combined_similarity = (
-                        element_similarity * 0.8 +  # Semantic similarity (70% weight)
+                    combined_similarity += (
                         (label_match_score + id_match_score + name_match_score + placeholder_match_score + type_match_score) / 500 * 0.2  # Fuzzy match (20% weight)
                     )
 
                     # Add bonus for dropdown selection steps
-                    if is_dropdown_selection:
+                    if "select" in step.lower() and "from" in step.lower() and "dropdown" in step.lower():
                         if element["attributes"]["role"] == "option":
                             # Prioritize option text/value matches
                             combined_similarity += (option_value_match_score + option_text_match_score) / 200 * 0.3  # 30% bonus
@@ -315,3 +326,16 @@ def get_embedding(text):
     with torch.no_grad():
         outputs = model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)  # Average pooling
+
+def generate_semantic_description(text, summarizer=None):
+    """
+    Generate a semantic description of a text using a summarization model.
+    """
+    if summarizer:
+        input_length = len(text.split())
+        max_length = min(50, input_length)
+        min_length = min(25, max_length // 2)
+        description = summarizer(text, max_length=max_length, min_length=min_length, do_sample=False)[0]['summary_text']
+        return description
+    else:
+        return "No description available"
