@@ -256,7 +256,6 @@
 
 
 
-
 from bs4 import BeautifulSoup
 import os
 from shared import tokenizer, model

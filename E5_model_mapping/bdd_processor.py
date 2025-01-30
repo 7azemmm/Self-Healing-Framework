@@ -92,14 +92,12 @@
 
 from shared import tokenizer, model
 import torch
-from sklearn.cluster import AgglomerativeClustering
-import numpy as np
 from transformers import pipeline
-from sklearn.preprocessing import normalize
 
 def process_bdd(file_path):
     """
     Process a single BDD scenario from a file and generate embeddings and semantic descriptions.
+    Splits the scenario into steps and processes each step individually.
     """
     # Initialize summarizer
     summarizer = None
@@ -112,17 +110,32 @@ def process_bdd(file_path):
     with open(file_path, "r") as file:
         scenario = file.read().strip()
 
-    # Generate embedding for the scenario
-    embedding = get_embedding(scenario)
+    # Split the scenario into steps
+    steps = scenario.split("\n")
+    processed_steps = []
 
-    # Generate semantic description for the scenario
-    description = generate_semantic_description(scenario, summarizer) if summarizer else "No description available"
+    for step in steps:
+        step = step.strip()
+        if step:  # Skip empty lines
+            # Generate embedding for the step
+            step_embedding = get_embedding(step)
 
-    # Return the processed scenario
+            # Generate semantic description for the step
+            step_description = generate_semantic_description(step, summarizer) if summarizer else "No description available"
+
+            # Add the processed step to the list
+            processed_steps.append({
+                "step": step,
+                "embedding": step_embedding,
+                "description": step_description
+            })
+
+    # Return the processed scenario with step-level data
     return {
         "scenario": scenario,
-        "embedding": embedding,
-        "description": description
+        "steps": processed_steps,
+        "embedding": get_embedding(scenario),  # Embedding for the entire scenario
+        "description": generate_semantic_description(scenario, summarizer) if summarizer else "No description available"  # Description for the entire scenario
     }
 
 def get_embedding(text):
@@ -136,7 +149,7 @@ def get_embedding(text):
 
 def generate_semantic_description(text, summarizer):
     """
-    Generate a semantic description of a BDD scenario using a summarization model.
+    Generate a semantic description of a BDD scenario or step using a summarization model.
     """
     if summarizer:
         input_length = len(text.split())

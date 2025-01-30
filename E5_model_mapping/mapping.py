@@ -232,8 +232,8 @@ def map_bdd_to_html(bdd_scenario, html_pages):
         # Only include "When" and "And" steps that contain action keywords
         if step.lower().startswith(("when", "and")) and any(keyword in step.lower() for keyword in action_keywords):
             step_embedding = get_embedding(step)
-            step_description = generate_semantic_description(step, summarizer)  # Generate description for the step
-            step_description_embedding = get_embedding(step_description)  # Embedding for the step description
+            step_description = generate_semantic_description(step, summarizer) if summarizer else "No description"
+            step_description_embedding = get_embedding(step_description) if step_description != "No description" else None
 
             best_match = None
             best_similarity = -1  # Initialize with a low value
@@ -242,14 +242,15 @@ def map_bdd_to_html(bdd_scenario, html_pages):
             for page, page_data in html_pages.items():
                 for element in page_data["elements"]:
                     element_embedding = element["embedding"]
-                    element_description_embedding = get_embedding(element["description"])  # Embedding for element description
+                    element_description_embedding = get_embedding(element["description"]) if element["description"] != "No description" else None
 
-                    # Combine step and element embeddings with their descriptions
+                    # Combine step and element embeddings with their descriptions (if available)
                     step_similarity = cosine_similarity(step_embedding, element_embedding).item()
-                    description_similarity = cosine_similarity(step_description_embedding, element_description_embedding).item()
-
-                    # Combine similarities (e.g., 70% step, 30% description)
-                    combined_similarity = (step_similarity * 0.7) + (description_similarity * 0.3)
+                    if step_description_embedding is not None and element_description_embedding is not None:
+                        description_similarity = cosine_similarity(step_description_embedding, element_description_embedding).item()
+                        combined_similarity = (step_similarity * 0.8) + (description_similarity * 0.2)  # Adjust weights
+                    else:
+                        combined_similarity = step_similarity  # Skip descriptions if they are generic
 
                     # Add fuzzy matching for label text, id, name, placeholder, and type
                     attributes = element.get("attributes", {})
@@ -327,7 +328,7 @@ def get_embedding(text):
         outputs = model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)  # Average pooling
 
-def generate_semantic_description(text, summarizer=None):
+def generate_semantic_description(text, summarizer):
     """
     Generate a semantic description of a text using a summarization model.
     """
