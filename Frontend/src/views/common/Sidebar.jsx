@@ -24,7 +24,7 @@ const Sidebar = () => {
         <SidebarItem icon={FiBook} label="Documents" href="/documents" />
         <SidebarSection label="Execution">
           <SidebarItem icon={FiPlay} label="Execute" href="/execute" />
-          <SidebarItem icon={FiPlay} label="Test Specific Scenario" href="/test-scenario" />
+          <SidebarItem icon={FiPlay} label="Add a new Scenario" href="/add-scenario" />
         </SidebarSection>
         <SidebarSection label="Help">
           <SidebarItem icon={FiSettings} label="Settings" href="/settings" />

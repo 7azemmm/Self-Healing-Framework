@@ -4,6 +4,8 @@ import Dashboard from './views/maindashboard/Dashboard.jsx'
 import Documents from './views/maindashboard/Documents.jsx'
 import Execute from './views/maindashboard/Execute.jsx'
 import Settings from './views/maindashboard/Settings.jsx'
+import AddScenario from './views/addScenario/addScenarioPage.jsx'
+
 
 
 const routes = [
@@ -31,13 +33,17 @@ const routes = [
   {
     path :'/settings',
     component :Settings
-  }
-//   {
-//     path: '/',
-//     component: Login,
-//   },
+  },
   
-  // Add other routes here
+  {
+    path: '/',
+    component: Login,
+  },
+  {
+    path: '/add-scenario',
+    component: AddScenario,
+  },
+  
 ];
 
 export default routes;
