@@ -20,27 +20,28 @@ const Sidebar = () => {
 
       {/* Menu */}
       <VStack align="stretch" spacing={4}>
-        <SidebarItem icon={FiMenu} label="Dashboard" />
-        <SidebarItem icon={FiBook} label="Documents" />
+        <SidebarItem icon={FiMenu} label="Dashboard" href="/dashboard" />
+        <SidebarItem icon={FiBook} label="Documents" href="/documents" />
         <SidebarSection label="Execution">
-          <SidebarItem icon={FiPlay} label="Execute" />
-          <SidebarItem icon={FiPlay} label="Test Specific Scenario" />
+          <SidebarItem icon={FiPlay} label="Execute" href="/execute" />
+          <SidebarItem icon={FiPlay} label="Test Specific Scenario" href="/test-scenario" />
         </SidebarSection>
         <SidebarSection label="Help">
-          <SidebarItem icon={FiSettings} label="Settings" />
-          <SidebarItem icon={FiBook} label="Documentation" />
+          <SidebarItem icon={FiSettings} label="Settings" href="/settings" />
+          <SidebarItem icon={FiBook} label="Documentation" href="/documentation" />
         </SidebarSection>
       </VStack>
 
       {/* Logout */}
-      <SidebarItem icon={FiLogOut} label="Log Out" color="red.500" />
+      <SidebarItem icon={FiLogOut} label="Log Out" href="/logout" color="red.500" />
     </Box>
   );
 };
 
 // eslint-disable-next-line react/prop-types
-const SidebarItem = ({ icon, label, color }) => (
+const SidebarItem = ({ icon, label, href, color }) => (
   <Link
+    href={href}
     display="flex"
     alignItems="center"
     p={2}
