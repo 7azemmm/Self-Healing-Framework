@@ -15,7 +15,7 @@ const Dashboard = () => {
       <Sidebar />
       <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
         <Navbar />
-        <Box flex="1" px={6} py={4} overflowY="auto">
+        <Box flex="1" px={6} py={4} overflowY="auto" display="flex" flexDirection="column">
           {/* Stat Cards */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
             <StatCard title="Scenarios" value="25" />
@@ -24,7 +24,7 @@ const Dashboard = () => {
           </SimpleGrid>
 
           {/* Main Content */}
-          <Flex gap={8} flexWrap="wrap">
+          <Flex gap={8} flexWrap="wrap" flex="1">
             {/* Test Execution Chart */}
             <Box flex="1" bg="white" p={4} borderRadius="md" shadow="sm" minW="300px">
               <Text fontWeight="bold" mb={4}>
