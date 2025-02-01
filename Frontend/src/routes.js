@@ -1,4 +1,4 @@
-import Login from './views/auth/Login'; // Adjust the path as needed
+import Login from './views/auth/login.jsx'// Adjust the path as needed
 import Signup from './views/auth/Signup'; // Adjust the path as needed
 import Dashboard from './views/maindashboard/Dashboard.jsx'
 import Documents from './views/maindashboard/Documents.jsx'
