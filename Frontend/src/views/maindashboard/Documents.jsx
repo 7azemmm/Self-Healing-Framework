@@ -6,6 +6,7 @@ import {
   Button,
   IconButton,
   Input,
+  Select,
   Table,
   Thead,
   Tbody,
@@ -25,8 +26,23 @@ import { useState } from "react";
 const Documents = () => {
   const toast = useToast();
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
+
+  // Sample list of projects.
+  const projects = ["Project A", "Project B", "Project C"];
 
   const handleUpload = (e) => {
+    if (!selectedProject) {
+      toast({
+        title: "No project selected.",
+        description: "Please select a project before uploading files.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
@@ -36,13 +52,14 @@ const Documents = () => {
       size: (file.size / 1024).toFixed(2) + " KB",
       type: file.type,
       uploadedAt: new Date().toLocaleString(),
+      project: selectedProject,
     }));
 
     setUploadedFiles([...uploadedFiles, ...newFiles]);
 
     toast({
       title: "File uploaded successfully.",
-      description: `${files.length} file(s) added.`,
+      description: `${files.length} file(s) added to ${selectedProject}.`,
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -89,6 +106,17 @@ const Documents = () => {
             </CardHeader>
             <CardBody>
               <VStack spacing={4} align="stretch">
+                {/* Dropdown to select project */}
+                <Select 
+                  placeholder="Select Project" 
+                  onChange={(e) => setSelectedProject(e.target.value)} 
+                  value={selectedProject}>
+                  {projects.map((project, idx) => (
+                    <option key={idx} value={project}>
+                      {project}
+                    </option>
+                  ))}
+                </Select>
                 <HStack spacing={4}>
                   <Input
                     type="file"
@@ -102,8 +130,7 @@ const Documents = () => {
                   </Button>
                 </HStack>
                 <Text fontSize="sm" color="gray.500">
-                  Supported formats: CSV, JavaScript (Test Scripts), BDD
-                  (.feature) files.
+                  Supported formats: CSV, JavaScript (Test Scripts), BDD (.feature) files.
                 </Text>
               </VStack>
             </CardBody>
@@ -129,6 +156,7 @@ const Documents = () => {
                       <Th>Size</Th>
                       <Th>Type</Th>
                       <Th>Uploaded At</Th>
+                      <Th>Project</Th>
                       <Th>Actions</Th>
                     </Tr>
                   </Thead>
@@ -139,6 +167,7 @@ const Documents = () => {
                         <Td>{file.size}</Td>
                         <Td>{file.type}</Td>
                         <Td>{file.uploadedAt}</Td>
+                        <Td>{file.project}</Td>
                         <Td>
                           <HStack spacing={2}>
                             <IconButton

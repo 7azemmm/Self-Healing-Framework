@@ -13,6 +13,8 @@ import {
     ListItem,
     ListIcon,
     Icon,
+    Select,
+    useToast,
   } from "@chakra-ui/react";
   import { CheckCircleIcon, WarningIcon, InfoOutlineIcon } from "@chakra-ui/icons";
   import Sidebar from "../common/Sidebar";
@@ -39,7 +41,24 @@ import {
       ],
     });
   
+    // New state for project selection and sample projects list
+    const [selectedProject, setSelectedProject] = useState("");
+    const projects = ["Project A", "Project B", "Project C"];
+  
+    const toast = useToast();
+  
     const handleRunTest = () => {
+      // Ensure a project is selected before starting execution.
+      if (!selectedProject) {
+        toast({
+          title: "No project selected.",
+          description: "Please select a project to execute tests.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
       setIsExecuting(true);
       // Simulate test execution
       setTimeout(() => {
@@ -63,7 +82,20 @@ import {
             </Text>
   
             {/* Main Execution Controls */}
-            <VStack align="stretch" mb={8}>
+            <VStack align="stretch" mb={8} spacing={4}>
+              {/* Dropdown to select a project */}
+              <Select
+                placeholder="Select Project to Execute"
+                onChange={(e) => setSelectedProject(e.target.value)}
+                value={selectedProject}
+              >
+                {projects.map((project, idx) => (
+                  <option key={idx} value={project}>
+                    {project}
+                  </option>
+                ))}
+              </Select>
+  
               <Button
                 colorScheme="blue"
                 size="lg"

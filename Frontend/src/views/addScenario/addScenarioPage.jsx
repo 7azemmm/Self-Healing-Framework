@@ -1,14 +1,33 @@
-import { Box, Button, Input, Text, Textarea, VStack, useToast } from "@chakra-ui/react";
+import { Box, Button, Input, Text, Textarea, VStack, useToast, Select } from "@chakra-ui/react";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState } from "react";
 
 const AddScenario = () => {
+  const [selectedProject, setSelectedProject] = useState("");
   const [scenario, setScenario] = useState("");
   const [urls, setUrls] = useState("");
   const toast = useToast();
 
+  // Sample project options; in a real application, these might be fetched from an API.
+  const projectOptions = [
+    { id: "proj1", name: "Project 1" },
+    { id: "proj2", name: "Project 2" },
+    { id: "proj3", name: "Project 3" },
+  ];
+
   const handleStartMapping = () => {
+    if (!selectedProject) {
+      toast({
+        title: "Project Not Selected",
+        description: "Please select a project before starting the mapping.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     if (!scenario.trim() || !urls.trim()) {
       toast({
         title: "Missing Information",
@@ -20,6 +39,7 @@ const AddScenario = () => {
       return;
     }
 
+    console.log("Selected Project:", selectedProject);
     console.log("Scenario:", scenario);
     console.log("URLs:", urls.split("\n"));
     
@@ -44,6 +64,22 @@ const AddScenario = () => {
             </Text>
             
             <VStack spacing={4} align="stretch" flex="1">
+              <Box>
+                <Text fontWeight="medium" mb={1}>Select Project:</Text>
+                <Select
+                  placeholder="Select project..."
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  bg="gray.100"
+                >
+                  {projectOptions.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
+              
               <Box>
                 <Text fontWeight="medium" mb={1}>BDD Scenario:</Text>
                 <Textarea
