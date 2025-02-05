@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'accounts',
+    'corsheaders', 
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Backend.urls'
@@ -75,12 +77,24 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'my_django_db', 
+        'USER': 'postgres',  
+        'PASSWORD': 'my_password',  
+        'HOST': 'localhost',  
+        'PORT': '5432',  
     }
 }
+
 
 
 # Password validation
@@ -131,3 +145,8 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+]
