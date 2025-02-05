@@ -1,56 +1,201 @@
-import { Box, Text, Flex, Table, Thead, Tbody, Tr, Th, Td, Button } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  VStack,
+  HStack,
+  Button,
+  IconButton,
+  Input,
+  Select,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  useToast,
+  Card,
+  CardHeader,
+  CardBody,
+} from "@chakra-ui/react";
+import { FaUpload, FaTrash, FaEye } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
+import { useState } from "react";
 
 const Documents = () => {
-  // Static data for documents
-  const documents = [
-    { name: "Requirements Document", type: "PDF", date: "01 Dec 2023" },
-    { name: "Test Plan", type: "DOCX", date: "05 Dec 2023" },
-    { name: "Execution Report", type: "XLSX", date: "10 Dec 2023" },
-  ];
+  const toast = useToast();
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
+
+  // Sample list of projects.
+  const projects = ["Project A", "Project B", "Project C"];
+
+  const handleUpload = (e) => {
+    if (!selectedProject) {
+      toast({
+        title: "No project selected.",
+        description: "Please select a project before uploading files.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newFiles = files.map((file) => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: (file.size / 1024).toFixed(2) + " KB",
+      type: file.type,
+      uploadedAt: new Date().toLocaleString(),
+      project: selectedProject,
+    }));
+
+    setUploadedFiles([...uploadedFiles, ...newFiles]);
+
+    toast({
+      title: "File uploaded successfully.",
+      description: `${files.length} file(s) added to ${selectedProject}.`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  const handleDelete = (id) => {
+    setUploadedFiles(uploadedFiles.filter((file) => file.id !== id));
+    toast({
+      title: "File deleted.",
+      status: "info",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  const handleViewFile = (fileName) => {
+    toast({
+      title: `Viewing: ${fileName}`,
+      description: "This is a placeholder for viewing file functionality.",
+      status: "info",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
 
   return (
-    <Flex h="100vh" overflow="hidden">
+    <Box display="flex" h="100vh" overflow="hidden">
       <Sidebar />
       <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
         <Navbar />
         <Box flex="1" px={6} py={4} overflowY="auto">
-          {/* Header */}
-          <Text fontSize="2xl" fontWeight="bold" mb={4}>
+          {/* Page Header */}
+          <Text fontSize="2xl" fontWeight="bold" color="blue.700" mb={6}>
             Documents
           </Text>
 
-          {/* Documents Table */}
-          <Box bg="white" p={4} borderRadius="md" shadow="sm">
-            <Table size="sm">
-              <Thead>
-                <Tr>
-                  <Th>Name</Th>
-                  <Th>Type</Th>
-                  <Th>Date</Th>
-                  <Th>Action</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {documents.map((doc, index) => (
-                  <Tr key={index}>
-                    <Td>{doc.name}</Td>
-                    <Td>{doc.type}</Td>
-                    <Td>{doc.date}</Td>
-                    <Td>
-                      <Button size="sm" colorScheme="blue">
-                        Download
-                      </Button>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </Box>
+          {/* Upload Section */}
+          <Card bg="white" boxShadow="sm" borderRadius="md" mb={6}>
+            <CardHeader>
+              <Text fontSize="lg" fontWeight="bold" color="blue.500">
+                Upload Documents
+              </Text>
+            </CardHeader>
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                {/* Dropdown to select project */}
+                <Select 
+                  placeholder="Select Project" 
+                  onChange={(e) => setSelectedProject(e.target.value)} 
+                  value={selectedProject}>
+                  {projects.map((project, idx) => (
+                    <option key={idx} value={project}>
+                      {project}
+                    </option>
+                  ))}
+                </Select>
+                <HStack spacing={4}>
+                  <Input
+                    type="file"
+                    multiple
+                    onChange={handleUpload}
+                    variant="unstyled"
+                    accept=".csv,.js,.feature"
+                  />
+                  <Button leftIcon={<FaUpload />} colorScheme="blue">
+                    Upload
+                  </Button>
+                </HStack>
+                <Text fontSize="sm" color="gray.500">
+                  Supported formats: CSV, JavaScript (Test Scripts), BDD (.feature) files.
+                </Text>
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Uploaded Files Table */}
+          <Card bg="white" boxShadow="sm" borderRadius="md">
+            <CardHeader>
+              <Text fontSize="lg" fontWeight="bold" color="blue.500">
+                Uploaded Files
+              </Text>
+            </CardHeader>
+            <CardBody>
+              {uploadedFiles.length === 0 ? (
+                <Text color="gray.500" textAlign="center">
+                  No files uploaded yet.
+                </Text>
+              ) : (
+                <Table variant="striped" colorScheme="gray" size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>File Name</Th>
+                      <Th>Size</Th>
+                      <Th>Type</Th>
+                      <Th>Uploaded At</Th>
+                      <Th>Project</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {uploadedFiles.map((file) => (
+                      <Tr key={file.id}>
+                        <Td>{file.name}</Td>
+                        <Td>{file.size}</Td>
+                        <Td>{file.type}</Td>
+                        <Td>{file.uploadedAt}</Td>
+                        <Td>{file.project}</Td>
+                        <Td>
+                          <HStack spacing={2}>
+                            <IconButton
+                              icon={<FaEye />}
+                              colorScheme="blue"
+                              size="sm"
+                              aria-label="View File"
+                              onClick={() => handleViewFile(file.name)}
+                            />
+                            <IconButton
+                              icon={<FaTrash />}
+                              colorScheme="red"
+                              size="sm"
+                              aria-label="Delete File"
+                              onClick={() => handleDelete(file.id)}
+                            />
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              )}
+            </CardBody>
+          </Card>
         </Box>
       </Box>
-    </Flex>
+    </Box>
   );
 };
 

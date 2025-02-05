@@ -15,7 +15,7 @@ const Sidebar = () => {
     >
       {/* Logo */}
       <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center" color="blue.700">
-        Testium
+        ReqTest
       </Text>
 
       {/* Menu */}
