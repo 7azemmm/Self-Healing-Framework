@@ -1,0 +1,36 @@
+Page URL: http://127.0.0.1:5500/login.html
+
+Feature: login
+
+Scenario: Successful login with valid credentials
+    When I enter username "user@example.com"
+    Locators: type=email | xpath=/html/body/form/input | name=email
+
+    And I enter password "password123"
+    Locators: id=psw-1234 | type=password | xpath=/html/body/form/input[2] | name=password
+
+    And I click the login button
+    Locators: id=lgn-btn | class=btn-login | type=button | xpath=/html/body/form/button | name=login
+
+    Then I should see the dashboard
+    Locators: id=lgn-btn | class=btn-login | type=button | xpath=/html/body/form/button | name=login
+
+
+Page URL: https://market/signup
+
+Feature: signup
+
+Scenario: Successful signup with valid credentials
+    When I enter username "user@example.com"
+    Locators: id=email
+
+    And I enter password "password123"
+    Locators: id=password
+
+    And I click the signup button
+    Locators: id=signup-button
+
+    Then I should see the login
+    Locators: id=password
+
+

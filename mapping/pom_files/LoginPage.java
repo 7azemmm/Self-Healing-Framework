@@ -10,7 +10,7 @@ import org.testng.Assert;
 import java.time.Duration;
 
 public class LoginPage {
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     WebElement emailInput;
     
     @FindBy(id = "psw-1234")
@@ -27,7 +27,7 @@ public class LoginPage {
     }
 
     public void navigateToLoginPage() {
-        driver.get("https://market/login");
+        driver.get("http://127.0.0.1:5500/login.html");
         // Add wait for page load if needed
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.visibilityOf(emailInput));
