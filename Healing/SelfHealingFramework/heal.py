@@ -39,6 +39,62 @@ class RLHealingAgent:
         strategy_index = self.strategies.index(strategy)
         self.q_table[strategy_index] += self.learning_rate * (reward - self.q_table[strategy_index])
 
+class ElementLocator:
+    """Handles element location strategies."""
+    def __init__(self, driver):
+        self.driver = driver
+
+    def find_element(self, strategy, locator, timeout=10):
+        """Find element using a specific strategy."""
+        try:
+            return WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((getattr(By, strategy.upper()), locator))
+            )
+        except Exception as e:
+            logger.debug(f"Strategy {strategy} failed for {locator}: {e}")
+            return None
+
+class ElementHealer:
+    """Handles element healing using ML and other strategies."""
+    def __init__(self, similarity_model, sym_spell):
+        self.similarity_model = similarity_model
+        self.sym_spell = sym_spell
+
+    def heal_element(self, original_attributes, page_elements):
+        """Attempt to heal a broken element locator."""
+        best_match = self._find_best_match(original_attributes, page_elements)
+        if best_match:
+            logger.info(f"Best match found: {best_match['attributes']}")
+            return best_match
+        logger.error("No suitable match found during healing")
+        return None
+
+    def _find_best_match(self, original_attributes, page_elements):
+        """Find the most similar element on the page using ML."""
+        best_match = None
+        best_score = 0
+        threshold = 0.3
+
+        original_text = self._attributes_to_text(original_attributes)
+        original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
+
+        for element_data in page_elements:
+            current_text = self._attributes_to_text(element_data['attributes'])
+            current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
+
+            similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
+            logger.debug(f"Comparing with element {element_data['attributes']}, similarity: {similarity}")
+
+            if similarity > best_score and similarity > threshold:
+                best_score = similarity
+                best_match = element_data
+
+        return best_match
+
+    def _attributes_to_text(self, attributes):
+        """Convert attributes dictionary to text for similarity comparison."""
+        return ' '.join(str(value) for value in attributes.values() if value)
+
 class SelfHealingFramework:
     def __init__(self, mapping_file_path: str):
         self.driver = None
@@ -51,6 +107,8 @@ class SelfHealingFramework:
         self.sym_spell = SymSpell()  # Error correction for BDD steps
         self.sym_spell.load_dictionary('path/to/dictionary.txt', term_index=0, count_index=1)
         self.retry_attempts = 3  # Number of retry attempts for finding elements
+        self.element_locator = ElementLocator(self.driver)
+        self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
 
     def _load_mappings(self, file_path: str) -> dict:
         """Load BDD step to element ID mappings from CSV."""
@@ -145,6 +203,7 @@ class SelfHealingFramework:
     def start_browser(self):
         """Initialize the WebDriver."""
         self.driver = webdriver.Chrome()
+        self.element_locator = ElementLocator(self.driver)
 
     def find_element(self, bdd_step: str, timeout: int = 10):
         """Find element using BDD step with self-healing capabilities."""
@@ -178,18 +237,9 @@ class SelfHealingFramework:
 
     def _find_with_healing(self, element_info: dict, timeout: int):
         """Find element with multiple strategies and self-healing."""
-        def try_strategy(strategy, locator):
-            try:
-                return WebDriverWait(self.driver, timeout).until(
-                    EC.presence_of_element_located((getattr(By, strategy.upper()), locator))
-                )
-            except Exception as e:
-                self.logger.debug(f"Strategy {strategy} failed for {element_info['element_id']}: {e}")
-                return None
-
         with ThreadPoolExecutor() as executor:
             futures = {
-                executor.submit(try_strategy, strategy, locator): strategy
+                executor.submit(self.element_locator.find_element, strategy, locator, timeout): strategy
                 for strategy, locator in element_info['locator_strategies'].items()
             }
 
@@ -208,9 +258,8 @@ class SelfHealingFramework:
             original_attributes = self._get_original_attributes(element_info)
             page_elements = self._get_all_page_elements()
 
-            best_match = self._find_best_match(original_attributes, page_elements)
+            best_match = self.element_healer.heal_element(original_attributes, page_elements)
             if best_match:
-                self.logger.info(f"Best match found: {best_match['attributes']}")
                 self._update_locator_strategies(element_info, best_match)
                 return best_match['element']
 
@@ -227,32 +276,6 @@ class SelfHealingFramework:
             'class_name': element_info.get('class_name'),
             'text': element_info.get('text')
         }
-
-    def _find_best_match(self, original_attributes: dict, page_elements: list):
-        """Find the most similar element on the page using ML."""
-        best_match = None
-        best_score = 0
-        threshold = 0.3
-
-        original_text = self._attributes_to_text(original_attributes)
-        original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
-
-        for element_data in page_elements:
-            current_text = self._attributes_to_text(element_data['attributes'])
-            current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
-
-            similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
-            self.logger.debug(f"Comparing with element {element_data['attributes']}, similarity: {similarity}")
-
-            if similarity > best_score and similarity > threshold:
-                best_score = similarity
-                best_match = element_data
-
-        return best_match
-
-    def _attributes_to_text(self, attributes: dict) -> str:
-        """Convert attributes dictionary to text for similarity comparison."""
-        return ' '.join(str(value) for value in attributes.values() if value)
 
     def _update_locator_strategies(self, element_info: dict, new_element: dict):
         """Update stored locator strategies with new information."""
@@ -361,7 +384,7 @@ def main():
     framework = SelfHealingFramework('./mapping.csv')
     framework.start_browser()
     try:
-        framework.driver.get("http://127.0.0.1:5587/htmlexamples/htmlexamples/index.html")
+        framework.driver.get("http://127.0.0.1:5500/login.html")
         framework.execute_all_steps(delay=2.0)
         framework.save_report("reports.json")
     finally:

@@ -1,6 +1,6 @@
 {
   "input-email": {
-    "timestamp": "2025-01-30T15:15:41.377628",
+    "timestamp": "2025-02-06T19:43:16.134873",
     "original_strategies": {
       "id": "input-email",
       "css": "#iemail",
@@ -21,6 +21,31 @@
       "type": "email",
       "name": "email",
       "xpath": "/html/body/form/input[1]"
+    },
+    "note": "This element was not found in the latest BDD mapping and was healed."
+  },
+  "password": {
+    "timestamp": "2025-02-06T19:43:33.377290",
+    "original_strategies": {
+      "id": "password",
+      "css": "#password",
+      "xpath": "//*[@id=\"passw-input\"]",
+      "full_xpath": "/html/body/form/input[2]"
+    },
+    "new_strategies": {
+      "id": "psw-1234",
+      "css": "#psw-1234",
+      "xpath": "/html/body/form/input[2]",
+      "full_xpath": "/html/body/form/input[2]"
+    },
+    "matched_attributes": {
+      "id": "psw-1234",
+      "tag_name": "input",
+      "class_name": "",
+      "text": "",
+      "type": "password",
+      "name": "password",
+      "xpath": "/html/body/form/input[2]"
     },
     "note": "This element was not found in the latest BDD mapping and was healed."
   }
