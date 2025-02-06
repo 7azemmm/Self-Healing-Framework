@@ -18,6 +18,7 @@ from symspellpy import SymSpell
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 class RLHealingAgent:
     """Reinforcement learning agent for strategy selection."""
     def __init__(self, strategies):
@@ -39,6 +40,7 @@ class RLHealingAgent:
         strategy_index = self.strategies.index(strategy)
         self.q_table[strategy_index] += self.learning_rate * (reward - self.q_table[strategy_index])
 
+
 class ElementLocator:
     """Handles element location strategies."""
     def __init__(self, driver):
@@ -53,6 +55,7 @@ class ElementLocator:
         except Exception as e:
             logger.debug(f"Strategy {strategy} failed for {locator}: {e}")
             return None
+
 
 class ElementHealer:
     """Handles element healing using ML and other strategies."""
@@ -95,24 +98,15 @@ class ElementHealer:
         """Convert attributes dictionary to text for similarity comparison."""
         return ' '.join(str(value) for value in attributes.values() if value)
 
-class SelfHealingFramework:
-    def __init__(self, mapping_file_path: str):
-        self.driver = None
-        self.logger = logger
-        self.mappings = self._load_mappings(mapping_file_path)
-        self.healing_history = {}
-        self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
-        self.rl_agent = RLHealingAgent(['id', 'css', 'xpath', 'xpath_contains'])  # RL agent for strategy selection
-        self.element_cache = {}  # Cache for frequently accessed elements
-        self.sym_spell = SymSpell()  # Error correction for BDD steps
-        self.sym_spell.load_dictionary('path/to/dictionary.txt', term_index=0, count_index=1)
-        self.retry_attempts = 3  # Number of retry attempts for finding elements
-        self.element_locator = ElementLocator(self.driver)
-        self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
 
-    def _load_mappings(self, file_path: str) -> dict:
+class MappingLoader:
+    """Handles loading and processing BDD step mappings."""
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def load_mappings(self):
         """Load BDD step to element ID mappings from CSV."""
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(self.file_path)
         mappings = {}
         for _, row in df.iterrows():
             bdd_step = row['BDD Step'].strip()
@@ -129,7 +123,7 @@ class SelfHealingFramework:
             }
         return mappings
 
-    def _generate_locator_strategies(self, element_id: str, css: str = None, xpath: str = None, full_xpath: str = None) -> dict:
+    def _generate_locator_strategies(self, element_id, css=None, xpath=None, full_xpath=None):
         """Generate multiple locator strategies for an element."""
         return {
             'id': element_id,
@@ -137,6 +131,56 @@ class SelfHealingFramework:
             'xpath': xpath or f"//*[@id='{element_id}']",  # Generate XPath from ID if not provided
             'full_xpath': full_xpath  # This can be None if not available
         }
+
+
+class ActionExecutor:
+    """Handles execution of actions based on BDD steps."""
+    def __init__(self, driver):
+        self.driver = driver
+
+    def execute_action(self, element, action, value=None):
+        """Execute an action on the given element."""
+        if action == "click":
+            element.click()
+        elif action == "input":
+            element.clear()
+            element.send_keys(value)
+        elif action == "verify":
+            is_visible = element.is_displayed()
+            logger.info(f"Verification result: {is_visible}")
+        elif action == "select":
+            select = Select(element)
+            select.select_by_visible_text(value)
+            logger.info(f"Selected '{value}' in dropdown")
+        elif action == "checkbox":
+            if value == "check" and not element.is_selected():
+                element.click()
+            elif value == "uncheck" and element.is_selected():
+                element.click()
+        elif action == "radio":
+            if not element.is_selected():
+                element.click()
+                logger.info("Selected radio button")
+        else:
+            logger.warning(f"Unrecognized action: {action}")
+
+
+class SelfHealingFramework:
+    def __init__(self, mapping_file_path: str):
+        self.driver = None
+        self.logger = logger
+        self.mapping_loader = MappingLoader(mapping_file_path)
+        self.mappings = self.mapping_loader.load_mappings()
+        self.healing_history = {}
+        self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
+        self.rl_agent = RLHealingAgent(['id', 'css', 'xpath', 'xpath_contains'])  # RL agent for strategy selection
+        self.element_cache = {}  # Cache for frequently accessed elements
+        self.sym_spell = SymSpell()  # Error correction for BDD steps
+        self.sym_spell.load_dictionary('path/to/dictionary.txt', term_index=0, count_index=1)
+        self.retry_attempts = 3  # Number of retry attempts for finding elements
+        self.element_locator = ElementLocator(self.driver)
+        self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
+        self.action_executor = ActionExecutor(self.driver)
 
     def execute_all_steps(self, delay=1.5):
         """Automatically execute all BDD steps from the CSV."""
@@ -146,29 +190,7 @@ class SelfHealingFramework:
             try:
                 element = self.find_element(bdd_step)
                 time.sleep(delay)
-                if action == "click":
-                    element.click()
-                elif action == "input":
-                    element.clear()
-                    element.send_keys(value)
-                elif action == "verify":
-                    is_visible = element.is_displayed()
-                    self.logger.info(f"Verification result for '{bdd_step}': {is_visible}")
-                elif action == "select":
-                    select = Select(element)
-                    select.select_by_visible_text(value)
-                    self.logger.info(f"Selected '{value}' in dropdown for '{bdd_step}'")
-                elif action == "checkbox":
-                    if value == "check" and not element.is_selected():
-                        element.click()
-                    elif value == "uncheck" and element.is_selected():
-                        element.click()
-                elif action == "radio":
-                    if not element.is_selected():
-                        element.click()
-                        self.logger.info(f"Selected radio button for '{bdd_step}'")
-                else:
-                    self.logger.warning(f"Unrecognized action for step '{bdd_step}'")
+                self.action_executor.execute_action(element, action, value)
             except Exception as e:
                 self.logger.error(f"Failed to execute action '{action}' for step '{bdd_step}': {e}")
 
@@ -285,7 +307,7 @@ class SelfHealingFramework:
         # Generate CSS selector based on available attributes
         css_selector = f"#{new_id}" if new_id else None
         
-        new_strategies = self._generate_locator_strategies(
+        new_strategies = self.mapping_loader._generate_locator_strategies(
             element_id=new_id,
             css=css_selector,
             xpath=new_xpath,
@@ -379,6 +401,7 @@ class SelfHealingFramework:
             current_element = parent
         return f"/html{xpath}"
 
+
 # Example usage
 def main():
     framework = SelfHealingFramework('./mapping.csv')
@@ -389,6 +412,7 @@ def main():
         framework.save_report("reports.json")
     finally:
         framework.close()
+
 
 if __name__ == "__main__":
     main()
