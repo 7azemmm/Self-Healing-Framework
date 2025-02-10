@@ -1,0 +1,5 @@
+Step,Page,ID,Class,Name,Value,XPath (Absolute),XPath (Relative),CSS Selector
+"When I enter username ""user@example.com""",https://download.hajat.com.ly/miu/login.html,N/A,N/A,email,N/A,/html/body/form/input,.//html/body/form/input,N/A
+"And I enter password ""password123""",https://download.hajat.com.ly/miu/login.html,psw-1234,N/A,password,N/A,/html/body/form/input[2],.//html/body/form/input[2],#psw-1234
+And I click the login button,https://download.hajat.com.ly/miu/login.html,lgn-btn,btn-login,login,N/A,/html/body/form/button,.//html/body/form/button,#lgn-btn
+Then I should see the dashboard,https://download.hajat.com.ly/miu/login.html,lgn-btn,btn-login,login,N/A,/html/body/form/button,.//html/body/form/button,#lgn-btn
