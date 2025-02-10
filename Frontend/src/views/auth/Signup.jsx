@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Box, FormControl, FormLabel, Input, Button, Heading, Text, Link } from '@chakra-ui/react';
 import { signup } from '../../services/auth/authService';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const Signup = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = await signup(fullName, email, password);
       console.log('Signup successful:', data);
+      navigate('/login'); // Redirect to the Login page
     } catch (error) {
       console.error('Signup failed:', error);
     }
@@ -25,15 +28,33 @@ const Signup = () => {
       <form onSubmit={handleSubmit}>
         <FormControl id="fullName" mb={4}>
           <FormLabel>Full Name</FormLabel>
-          <Input type="text" placeholder="Enter your full name" size="lg" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <Input
+            type="text"
+            placeholder="Enter your full name"
+            size="lg"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
         </FormControl>
         <FormControl id="email" mb={4}>
           <FormLabel>Email</FormLabel>
-          <Input type="email" placeholder="Enter your email" size="lg" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            size="lg"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </FormControl>
         <FormControl id="password" mb={6}>
           <FormLabel>Password</FormLabel>
-          <Input type="password" placeholder="Enter your password" size="lg" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            type="password"
+            placeholder="Enter your password"
+            size="lg"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </FormControl>
         <Button type="submit" colorScheme="primary" width="100%" size="lg" mb={4}>
           Sign Up
