@@ -21,17 +21,35 @@ import {
 import { FaUpload, FaTrash, FaEye } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const Documents = () => {
   const toast = useToast();
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedProject, setSelectedProject] = useState("");
+  const [projects, setProjects] = useState([]);
 
-  // Sample list of projects.
-  const projects = ["Project A", "Project B", "Project C"];
+  // Fetch projects from the backend
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/get_projects/");
+        setProjects(response.data);
+      } catch (error) {
+        toast({
+          title: "Error fetching projects",
+          description: error.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    };
+    fetchProjects();
+  }, []);
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     if (!selectedProject) {
       toast({
         title: "No project selected.",
@@ -46,34 +64,56 @@ const Documents = () => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    const newFiles = files.map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: (file.size / 1024).toFixed(2) + " KB",
-      type: file.type,
-      uploadedAt: new Date().toLocaleString(),
-      project: selectedProject,
-    }));
-
-    setUploadedFiles([...uploadedFiles, ...newFiles]);
-
-    toast({
-      title: "File uploaded successfully.",
-      description: `${files.length} file(s) added to ${selectedProject}.`,
-      status: "success",
-      duration: 3000,
-      isClosable: true,
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
     });
+    formData.append("project_id", selectedProject);
+
+    try {
+      const response = await axios.post("http://localhost:8000/api/documents/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setUploadedFiles([...uploadedFiles, ...response.data]);
+      toast({
+        title: "File uploaded successfully.",
+        description: `${files.length} file(s) added to the project.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed.",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const handleDelete = (id) => {
-    setUploadedFiles(uploadedFiles.filter((file) => file.id !== id));
-    toast({
-      title: "File deleted.",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/delete_document/${id}/`);
+      setUploadedFiles(uploadedFiles.filter((file) => file.id !== id));
+      toast({
+        title: "File deleted.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed.",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleViewFile = (fileName) => {
@@ -107,13 +147,14 @@ const Documents = () => {
             <CardBody>
               <VStack spacing={4} align="stretch">
                 {/* Dropdown to select project */}
-                <Select 
-                  placeholder="Select Project" 
-                  onChange={(e) => setSelectedProject(e.target.value)} 
-                  value={selectedProject}>
-                  {projects.map((project, idx) => (
-                    <option key={idx} value={project}>
-                      {project}
+                <Select
+                  placeholder="Select Project"
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  value={selectedProject}
+                >
+                  {projects.map((project) => (
+                    <option key={project.project_id} value={project.project_id}>
+                      {project.project_name}
                     </option>
                   ))}
                 </Select>

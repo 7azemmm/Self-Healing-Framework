@@ -1,22 +1,36 @@
 import { Box, Button, Input, Text, Textarea, VStack, useToast, Select } from "@chakra-ui/react";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const AddScenario = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [scenario, setScenario] = useState("");
   const [urls, setUrls] = useState("");
+  const [projects, setProjects] = useState([]);
   const toast = useToast();
 
-  // Sample project options; in a real application, these might be fetched from an API.
-  const projectOptions = [
-    { id: "proj1", name: "Project 1" },
-    { id: "proj2", name: "Project 2" },
-    { id: "proj3", name: "Project 3" },
-  ];
+  // Fetch projects from the backend
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/get_projects/");
+        setProjects(response.data);
+      } catch (error) {
+        toast({
+          title: "Error fetching projects",
+          description: error.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    };
+    fetchProjects();
+  }, []);
 
-  const handleStartMapping = () => {
+  const handleStartMapping = async () => {
     if (!selectedProject) {
       toast({
         title: "Project Not Selected",
@@ -39,17 +53,28 @@ const AddScenario = () => {
       return;
     }
 
-    console.log("Selected Project:", selectedProject);
-    console.log("Scenario:", scenario);
-    console.log("URLs:", urls.split("\n"));
-    
-    toast({
-      title: "Mapping Started",
-      description: "The system is processing the scenario.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    try {
+      const response = await axios.post("http://localhost:8000/api/scenario/", {
+        project_id: selectedProject,
+        bdd: scenario,
+        links: urls,
+      });
+      toast({
+        title: "Mapping Started",
+        description: response.data.message,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Mapping Failed",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -72,9 +97,9 @@ const AddScenario = () => {
                   onChange={(e) => setSelectedProject(e.target.value)}
                   bg="gray.100"
                 >
-                  {projectOptions.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
+                  {projects.map((project) => (
+                    <option key={project.project_id} value={project.project_id}>
+                      {project.project_name}
                     </option>
                   ))}
                 </Select>

@@ -1,5 +1,5 @@
 import { Box, VStack, Text, Icon, Link } from "@chakra-ui/react";
-import { FiMenu, FiSettings, FiBook, FiPlay, FiLogOut } from "react-icons/fi";
+import { FiMenu, FiSettings, FiBook, FiPlay, FiLogOut, FiPlus } from "react-icons/fi";
 
 const Sidebar = () => {
   return (
@@ -25,6 +25,9 @@ const Sidebar = () => {
         <SidebarSection label="Execution">
           <SidebarItem icon={FiPlay} label="Execute" href="/execute" />
           <SidebarItem icon={FiPlay} label="Add a new Scenario" href="/add-scenario" />
+        </SidebarSection>
+        <SidebarSection label="Projects">
+          <SidebarItem icon={FiPlus} label="Create Project" href="/create-project" />
         </SidebarSection>
         <SidebarSection label="Help">
           <SidebarItem icon={FiSettings} label="Settings" href="/settings" />
