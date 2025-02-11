@@ -6,14 +6,13 @@ import axios from "axios";
 
 const CreateProject = () => {
   const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
   const toast = useToast();
 
   const handleCreateProject = async () => {
-    if (!projectName.trim() || !projectDescription.trim()) {
+    if (!projectName.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all fields.",
+        description: "Please fill in the project name.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -22,23 +21,37 @@ const CreateProject = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8000/api/create_project/", {
-        name: projectName,
-        description: projectDescription,
-      });
+      
+      const token = localStorage.getItem("access_token");
+
+      const response = await axios.post(
+        "http://localhost:8000/api/create_project/",
+        {
+          project_name: projectName, 
+        },
+        {
+          headers: {
+            Authorization: `${token}`, 
+          },
+        }
+      );
+
+      // Success message
       toast({
         title: "Project Created",
-        description: response.data.message,
+        description: `Project '${response.data.project.name}' created successfully.`,
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
+      // Clear the input field
       setProjectName("");
-      setProjectDescription("");
     } catch (error) {
+      // Error handling
       toast({
         title: "Error Creating Project",
-        description: error.message,
+        description: error.response?.data?.error || "An unknown error occurred.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -52,14 +65,24 @@ const CreateProject = () => {
       <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
         <Navbar />
         <Box flex="1" px={6} py={4} overflowY="auto">
-          <Box bg="white" p={6} borderRadius="md" shadow="sm" h="100%" display="flex" flexDirection="column">
+          <Box
+            bg="white"
+            p={6}
+            borderRadius="md"
+            shadow="sm"
+            h="100%"
+            display="flex"
+            flexDirection="column"
+          >
             <Text fontSize="xl" fontWeight="bold" mb={4} color="blue.700">
               Create a New Project
             </Text>
-            
+
             <VStack spacing={4} align="stretch" flex="1">
               <Box>
-                <Text fontWeight="medium" mb={1}>Project Name:</Text>
+                <Text fontWeight="medium" mb={1}>
+                  Project Name:
+                </Text>
                 <Input
                   placeholder="Enter project name"
                   value={projectName}
@@ -68,19 +91,13 @@ const CreateProject = () => {
                   bg="gray.100"
                 />
               </Box>
-              
-              <Box>
-                <Text fontWeight="medium" mb={1}>Project Description:</Text>
-                <Input
-                  placeholder="Enter project description"
-                  value={projectDescription}
-                  onChange={(e) => setProjectDescription(e.target.value)}
-                  size="md"
-                  bg="gray.100"
-                />
-              </Box>
-              
-              <Button colorScheme="blue" size="lg" onClick={handleCreateProject} alignSelf="flex-start">
+
+              <Button
+                colorScheme="blue"
+                size="lg"
+                onClick={handleCreateProject}
+                alignSelf="flex-start"
+              >
                 Create Project
               </Button>
             </VStack>

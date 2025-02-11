@@ -87,11 +87,43 @@ def scenario(request):
 
 
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Project
+
 @api_view(['POST'])
+
 def create_project(request):
+    """
+    Create a new project associated with the authenticated user.
+    """
     data = request.data
-    project = Project.objects.create(name=data.get('name'),description=data.get('description'))
-    return Response({"message":"Project created successfully"})
+
+    try:
+        project = Project.objects.create(
+            project_name=data.get('project_name'), 
+            user_id=request.user.id
+        )
+
+        return Response(
+            {
+                "message": "Project created successfully",
+                "project": {
+                    "id": project.project_id,
+                    "name": project.project_name,
+                    "created_at": project.created_at,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": "Error creating project: " + str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 @api_view(['GET'])
 def get_projects(request):

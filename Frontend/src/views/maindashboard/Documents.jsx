@@ -29,6 +29,8 @@ const Documents = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [projects, setProjects] = useState([]);
+  const [bddFile, setBddFile] = useState(null);
+  const [testScriptFile, setTestScriptFile] = useState(null);
 
   // Fetch projects from the backend
   useEffect(() => {
@@ -49,7 +51,7 @@ const Documents = () => {
     fetchProjects();
   }, []);
 
-  const handleUpload = async (e) => {
+  const handleUpload = async () => {
     if (!selectedProject) {
       toast({
         title: "No project selected.",
@@ -61,13 +63,20 @@ const Documents = () => {
       return;
     }
 
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+    if (!bddFile || !testScriptFile) {
+      toast({
+        title: "Missing files.",
+        description: "Please upload both a BDD file and a test script file.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
     const formData = new FormData();
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
+    formData.append("bdd", bddFile);
+    formData.append("test_script", testScriptFile);
     formData.append("project_id", selectedProject);
 
     try {
@@ -78,12 +87,14 @@ const Documents = () => {
       });
       setUploadedFiles([...uploadedFiles, ...response.data]);
       toast({
-        title: "File uploaded successfully.",
-        description: `${files.length} file(s) added to the project.`,
+        title: "Files uploaded successfully.",
+        description: "BDD and test script files have been uploaded.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+      setBddFile(null);
+      setTestScriptFile(null);
     } catch (error) {
       toast({
         title: "Upload failed.",
@@ -158,20 +169,38 @@ const Documents = () => {
                     </option>
                   ))}
                 </Select>
-                <HStack spacing={4}>
+
+                {/* BDD File Input */}
+                <Box>
+                  <Text fontWeight="medium" mb={1}>
+                    BDD File:
+                  </Text>
                   <Input
                     type="file"
-                    multiple
-                    onChange={handleUpload}
+                    accept=".feature"
+                    onChange={(e) => setBddFile(e.target.files[0])}
                     variant="unstyled"
-                    accept=".csv,.js,.feature"
                   />
-                  <Button leftIcon={<FaUpload />} colorScheme="blue">
-                    Upload
-                  </Button>
-                </HStack>
+                </Box>
+
+                {/* Test Script File Input */}
+                <Box>
+                  <Text fontWeight="medium" mb={1}>
+                    Test Script File:
+                  </Text>
+                  <Input
+                    type="file"
+                    accept=".js,.py"
+                    onChange={(e) => setTestScriptFile(e.target.files[0])}
+                    variant="unstyled"
+                  />
+                </Box>
+
+                <Button leftIcon={<FaUpload />} colorScheme="blue" onClick={handleUpload}>
+                  Upload
+                </Button>
                 <Text fontSize="sm" color="gray.500">
-                  Supported formats: CSV, JavaScript (Test Scripts), BDD (.feature) files.
+                  Supported formats: BDD (.feature), JavaScript (.js), Python (.py).
                 </Text>
               </VStack>
             </CardBody>
