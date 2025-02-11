@@ -7,18 +7,14 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 const Dashboard = () => {
   // Static data for healed elements
   const healedElements = [
-    { name: "First Execution", type: "Button", date: "01 Dec 2023", pastId: "login-btn", newId: "login-btn" },
-    { name: "Second Execution", type: "Input Field", date: "11 Dec 2024", pastId: "pass-input", newId: "PASSWORD" },
-    { name: "Third Execution", type: "Input Field", date: "11 Dec 2024", pastId: "email-input", newId: "email-input" },
+    { name: "First Execution", type: "input", date: "11 feb 2025", pastId: "iemail", newId: "email" },
+    { name: "Second Execution", type: "button", date: "11 Dec 2025", pastId: "btn-login", newId: "btn-signin" },
   ];
 
   // Sample data for the bar chart: executions and their counts
   const executionData = [
-    { name: "Execution 1", count: 24 },
-    { name: "Execution 2", count: 18 },
-    { name: "Execution 3", count: 30 },
-    { name: "Execution 4", count: 12 },
-    { name: "Execution 5", count: 28 },
+    { name: "Execution 1", count: 2 },
+    { name: "Execution 2", count: 2 },
   ];
 
   return (
@@ -29,9 +25,8 @@ const Dashboard = () => {
         <Box flex="1" px={6} py={4} overflowY="auto" display="flex" flexDirection="column">
           {/* Stat Cards */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
-            <StatCard title="Scenarios" value="25" />
+            <StatCard title="Scenarios" value="2" />
             <StatCard title="Healed Elements" value="79%" progress={79} />
-            <StatCard title="Coverage" value="52%" progress={52} />
           </SimpleGrid>
 
           {/* Main Content */}
