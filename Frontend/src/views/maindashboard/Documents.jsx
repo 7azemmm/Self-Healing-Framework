@@ -190,7 +190,7 @@ const Documents = () => {
                   </Text>
                   <Input
                     type="file"
-                    accept=".js,.py"
+                    accept=".java,.py"
                     onChange={(e) => setTestScriptFile(e.target.files[0])}
                     variant="unstyled"
                   />
@@ -200,7 +200,7 @@ const Documents = () => {
                   Upload
                 </Button>
                 <Text fontSize="sm" color="gray.500">
-                  Supported formats: BDD (.feature), JavaScript (.js), Python (.py).
+                  Supported formats: BDD (.feature), Java (.java), Python (.py).
                 </Text>
               </VStack>
             </CardBody>

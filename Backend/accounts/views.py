@@ -4,10 +4,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model  # Import get_user_model
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer
 from .controllers.mapping import MappingProcessor
-from .models import Project
-import csv
+from .models import Project,Scenarios
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
@@ -41,10 +40,19 @@ def get_user(self):
 def documents(request):
     data = request.data
     processor = MappingProcessor()
-    bdd = data.get('bdd')
-    test_script = data.get('test_script')
+    uploaded_file = request.FILES.get('bdd')
+    binary_data = uploaded_file.read()
+    bdd = binary_data.decode('utf-8')
+    uploaded_file = request.FILES.get('test_script')
+    binary_data = uploaded_file.read()
+    test_script = binary_data.decode('utf-8')
+    project_id = data.get('project_id')
     output = processor.process(bdd,test_script)
-    return Response(output)
+    Scenarios.objects.create(
+            project_id=project_id, 
+            mapping_file=output
+        )
+    return Response("Added Successfully")
 
 @api_view(['POST'])
 def healing(request):
@@ -110,13 +118,14 @@ from rest_framework import status
 from .models import Project
 
 @api_view(['POST'])
-
+@permission_classes([IsAuthenticated])
 def create_project(request):
     """
     Create a new project associated with the authenticated user.
     """
     data = request.data
-
+    Response({"message": request.user.id,})
+                
     try:
         project = Project.objects.create(
             project_name=data.get('project_name'), 

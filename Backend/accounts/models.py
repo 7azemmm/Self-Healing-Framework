@@ -59,7 +59,7 @@ class Execution(models.Model):
 class Scenarios(models.Model):
     scenario_id = models.AutoField(primary_key=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='scenarios')
-    mapping_file = models.CharField(max_length=25, null=False)
+    mapping_file = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

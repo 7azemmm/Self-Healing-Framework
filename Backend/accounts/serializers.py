@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Project
+from .models import Project,Scenarios
 
 User = get_user_model()
 
@@ -34,4 +34,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
+        fields = '__all__'
+
+class ScenarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scenarios
         fields = '__all__'
