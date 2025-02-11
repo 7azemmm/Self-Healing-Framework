@@ -154,3 +154,22 @@ def create_project(request):
 def get_projects(request):
     projects = Project.objects.all()
     return Response(ProjectSerializer(projects,many=True).data)
+
+
+
+@api_view(['POST'])
+def execute_tests(request):
+    data = request.data
+    project_id = data.get('project_id')
+    scenarios = Scenarios.objects.get(project_id=project_id)
+    mapping = scenarios.mapping_file
+    header = mapping[0]
+    result = [dict(zip(header, row)) for row in mapping[1:]]
+    framework = SelfHealingFramework(result)
+    framework.start_browser()
+    try:
+        framework.driver.get(mapping[1][1])
+        framework.execute_all_steps(delay=0.0)
+        return Response({"message":framework.report(),"success":True})
+    finally:
+        framework.close()

@@ -67,6 +67,7 @@ const Execute = () => {
     setIsExecuting(true);
 
     try {
+      const token = localStorage.getItem("access_token");
       const response = await axios.post("http://localhost:8000/api/execute_tests/", {
         project_id: selectedProject,
       });
@@ -78,7 +79,23 @@ const Execute = () => {
         duration: 3000,
         isClosable: true,
       });
+      const data = response.data.message
+      const parsedData = JSON.parse(data);
+      const map = Object.keys(parsedData).map(oldId => {
+        const newId = parsedData[oldId].new_strategies.id;
+        return `${oldId} was fixed to ${newId}`;
+      });
+      map.forEach(element => {
+        toast({
+          title: "Strategy ID Fix",
+          description: element,
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+      });
     } catch (error) {
+      console.log(error);
       toast({
         title: "Test execution failed.",
         description: error.message,
