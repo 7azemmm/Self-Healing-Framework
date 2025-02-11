@@ -1,20 +1,34 @@
-import { Box, SimpleGrid, Text, Flex, Progress, Table, Thead, Tbody, Tr, Th, Td } from "@chakra-ui/react";
+import { 
+  Box, 
+  Text, 
+  Flex, 
+  Progress, 
+  Table, 
+  Thead, 
+  Tbody, 
+  Tr, 
+  Th, 
+  Td 
+} from "@chakra-ui/react";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
-//import { useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
 const Dashboard = () => {
   // Static data for healed elements
   const healedElements = [
-    { name: "First Execution", type: "input", date: "11 feb 2025", pastId: "iemail", newId: "email" },
-    { name: "Second Execution", type: "button", date: "11 Dec 2025", pastId: "btn-login", newId: "btn-signin" },
+    { name: "First Execution", type: "input", date: "11 Feb 2025", pastId: "iemail", newId: "email" },
+    { name: "First Execution", type: "input", date: "11 Feb 2025", pastId: "pass", newId: "password" },
+    { name: "Second Execution", type: "button", date: "11 Dec 2025", pastId: "btn-register", newId: "btn-signup" },
+    { name: "Second Execution", type: "input", date: "11 Dec 2025", pastId: "input-addr", newId: "input-address" },
+    { name: "Second Execution", type: "radio", date: "11 Dec 2025", pastId: "radio-gender", newId: "radio-sex" },
+    { name: "Second Execution", type: "check", date: "11 Dec 2025", pastId: "check-remember", newId: "check-rememberme" },
   ];
 
   // Sample data for the bar chart: executions and their counts
   const executionData = [
     { name: "Execution 1", count: 2 },
-    { name: "Execution 2", count: 2 },
+    { name: "Execution 2", count: 4 },
   ];
 
   return (
@@ -24,10 +38,10 @@ const Dashboard = () => {
         <Navbar />
         <Box flex="1" px={6} py={4} overflowY="auto" display="flex" flexDirection="column">
           {/* Stat Cards */}
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
+          <Flex gap={6} justify="space-evenly" mb={8}>
             <StatCard title="Scenarios" value="2" />
             <StatCard title="Healed Elements" value="79%" progress={79} />
-          </SimpleGrid>
+          </Flex>
 
           {/* Main Content */}
           <Flex gap={8} flexWrap="wrap" flex="1">
