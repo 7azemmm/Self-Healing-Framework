@@ -61,7 +61,7 @@ def fine_tune_model(train_examples, model_name='all-MiniLM-L6-v2', epochs=3):
     # Create data loader
     train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
     
-    # Use ContrastiveLoss instead of SoftmaxLoss
+    # Use ContrastiveLoss 
     train_loss = losses.ContrastiveLoss(model=model)
     
     # Train the model

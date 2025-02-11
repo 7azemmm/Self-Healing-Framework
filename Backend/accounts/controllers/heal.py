@@ -163,7 +163,7 @@ class SelfHealingFramework:
         self.rl_agent = RLHealingAgent(['id', 'CSS Selector', 'XPath (Absolute)', 'xpath_contains'])  # RL agent for strategy selection
         self.element_cache = {}  # Cache for frequently accessed elements
         self.sym_spell = SymSpell()  # Error correction for BDD steps
-        self.retry_attempts = 3  # Number of retry attempts for finding elements
+        self.retry_attempts = 1  # Number of retry attempts for finding elements
         self.element_locator = ElementLocator(self.driver)
         self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
         self.action_executor = ActionExecutor(self.driver)
