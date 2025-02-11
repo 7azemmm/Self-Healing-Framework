@@ -11,7 +11,7 @@ import csv
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
-
+from .controllers.heal import SelfHealingFramework
 
 User = get_user_model()  # Get the custom user model
 
@@ -47,9 +47,25 @@ def documents(request):
     return Response(output)
 
 @api_view(['POST'])
+def healing(request):
+    data = request.data
+    mapping = data.get('mapping')
+    header = mapping[0]
+    result = [dict(zip(header, row)) for row in mapping[1:]]
+    framework = SelfHealingFramework(result)
+    framework.start_browser()
+    try:
+        framework.driver.get(mapping[1][1])
+        framework.execute_all_steps(delay=0.0)
+        return Response(framework.report())
+    finally:
+        framework.close()
+
+
+@api_view(['POST'])
 def scenario(request):
     data = request.data
-    bdd = data.get('bdd') 
+    bdd = data.get('bdd')
     links = data.get('links')
     print("Starting the script...")
 
