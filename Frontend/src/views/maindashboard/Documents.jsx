@@ -29,8 +29,8 @@ const Documents = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [projects, setProjects] = useState([]);
-  const [bddFile, setBddFile] = useState(null);
-  const [testScriptFile, setTestScriptFile] = useState(null);
+  const [bddFiles, setBddFiles] = useState([]);
+  const [testScriptFiles, setTestScriptFiles] = useState([]);
 
   // Fetch projects from the backend
   useEffect(() => {
@@ -63,10 +63,10 @@ const Documents = () => {
       return;
     }
 
-    if (!bddFile || !testScriptFile) {
+    if (bddFiles.length === 0 || testScriptFiles.length === 0) {
       toast({
         title: "Missing files.",
-        description: "Please upload both a BDD file and a test script file.",
+        description: "Please upload at least one BDD file and one test script file.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -75,8 +75,12 @@ const Documents = () => {
     }
 
     const formData = new FormData();
-    formData.append("bdd", bddFile);
-    formData.append("test_script", testScriptFile);
+    bddFiles.forEach((file, index) => {
+      formData.append(`bdd_${index}`, file);
+    });
+    testScriptFiles.forEach((file, index) => {
+      formData.append(`test_script_${index}`, file);
+    });
     formData.append("project_id", selectedProject);
 
     try {
@@ -88,13 +92,13 @@ const Documents = () => {
       setUploadedFiles([...uploadedFiles, ...response.data]);
       toast({
         title: "Files uploaded successfully.",
-        description: "BDD and test script files have been uploaded.",
+        description: "All files have been uploaded.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      setBddFile(null);
-      setTestScriptFile(null);
+      setBddFiles([]);
+      setTestScriptFiles([]);
     } catch (error) {
       toast({
         title: "Upload failed.",
@@ -170,30 +174,42 @@ const Documents = () => {
                   ))}
                 </Select>
 
-                {/* BDD File Input */}
+                {/* BDD Files Input */}
                 <Box>
                   <Text fontWeight="medium" mb={1}>
-                    BDD File:
+                    BDD Files:
                   </Text>
                   <Input
                     type="file"
                     accept=".feature"
-                    onChange={(e) => setBddFile(e.target.files[0])}
+                    onChange={(e) => setBddFiles(Array.from(e.target.files))}
                     variant="unstyled"
+                    multiple
                   />
+                  {bddFiles.length > 0 && (
+                    <Text fontSize="sm" color="green.500" mt={1}>
+                      {bddFiles.length} file(s) selected
+                    </Text>
+                  )}
                 </Box>
 
-                {/* Test Script File Input */}
+                {/* Test Script Files Input */}
                 <Box>
                   <Text fontWeight="medium" mb={1}>
-                    Test Script File:
+                    Test Script Files:
                   </Text>
                   <Input
                     type="file"
                     accept=".java,.py"
-                    onChange={(e) => setTestScriptFile(e.target.files[0])}
+                    onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
                     variant="unstyled"
+                    multiple
                   />
+                  {testScriptFiles.length > 0 && (
+                    <Text fontSize="sm" color="green.500" mt={1}>
+                      {testScriptFiles.length} file(s) selected
+                    </Text>
+                  )}
                 </Box>
 
                 <Button leftIcon={<FaUpload />} colorScheme="blue" onClick={handleUpload}>

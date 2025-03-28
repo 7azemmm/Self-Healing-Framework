@@ -81,10 +81,12 @@ const Execute = () => {
       });
       const data = response.data.message
       const parsedData = JSON.parse(data);
+      console.log(parsedData);
       const map = Object.keys(parsedData).map(oldId => {
         const newId = parsedData[oldId].new_strategies.id;
         return `${oldId} was fixed to ${newId}`;
       });
+      console.log(map);
       map.forEach(element => {
         toast({
           title: "Strategy ID Fix",

@@ -10,42 +10,45 @@ import org.testng.Assert;
 import java.time.Duration;
 
 public class LoginPage {
-    @FindBy(id = "user12334")
+    @FindBy(name = "email")
     WebElement emailInput;
-    
-    @FindBy(id = "pswd123")
+
+    @FindBy(id = "psw-1234")
     WebElement passwordInput;
-    
-    @FindBy(id = "rg12345")
-    WebElement signupButton;
-    
+
+    @FindBy(id = "lgn-btn")
+    WebElement loginButton;
+
     private WebDriver driver;
 
-    public signupPage(WebDriver driver) {
+    public LoginPage(WebDriver driver) {
         this.driver = driver;
         PageFactory.initElements(driver, this);
     }
 
-    public void navigateTosignupPage() {
-        driver.get("https://miu.hajat.com.ly/registration.html");
-        // Add wait for page load if needed
+    public void navigateToLoginPage() {
+        driver.get("https://miu.hajat.com.ly/login.html");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.visibilityOf(emailInput));
     }
-    
+
     public void enterUsername(String username) {
         emailInput.clear();
         emailInput.sendKeys(username);
     }
-    
+
     public void enterPassword(String password) {
         passwordInput.clear();
         passwordInput.sendKeys(password);
     }
-    
-    public void clicksignupButton() {
-        signupButton.click();
+
+    public void clickLoginButton() {
+        loginButton.click();
     }
-    
-  
+
+    public void verifyDashboardVisible() {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebElement dashboard = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("dashboard")));
+        Assert.assertTrue(dashboard.isDisplayed(), "Dashboard is not visible after login");
+    }
 }

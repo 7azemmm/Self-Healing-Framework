@@ -40,18 +40,22 @@ def get_user(self):
 def documents(request):
     data = request.data
     processor = MappingProcessor()
-    uploaded_file = request.FILES.get('bdd')
-    binary_data = uploaded_file.read()
-    bdd = binary_data.decode('utf-8')
-    uploaded_file = request.FILES.get('test_script')
-    binary_data = uploaded_file.read()
-    test_script = binary_data.decode('utf-8')
     project_id = data.get('project_id')
-    output = processor.process(bdd,test_script)
-    Scenarios.objects.create(
-            project_id=project_id, 
-            mapping_file=output
-        )
+    bdd_files = []
+    test_script_files = {}
+    for key in request.FILES:
+        if key.startswith('bdd_'):
+            bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
+        elif key.startswith('test_script_'):
+            test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
+            
+        
+    outputs = processor.process_all_features(bdd_files,test_script_files)
+    for output in outputs:
+        Scenarios.objects.create(
+                project_id=project_id, 
+                mapping_file=output
+            )
     return Response("Added Successfully")
 
 @api_view(['POST'])
@@ -96,18 +100,24 @@ def scenario(request):
     ]]
     for match in mappings:
         response.append([
-            match["step"],  # Step
-            match["page"],  # Page
-            get_attribute_simple(match["element"]["attributes"], "id"),  # ID
-            get_attribute_simple(match["element"]["attributes"], "class"),  # Class
-            get_attribute_simple(match["element"]["attributes"], "name"),  # Name
-            get_attribute_simple(match["element"]["attributes"], "value"),  # Value
-            get_attribute_simple(match["element"]["attributes"], "xpath_absolute"),  # XPath (Absolute)
-            get_attribute_simple(match["element"]["attributes"], "xpath_relative"),  # XPath (Relative)
-            get_attribute_simple(match["element"]["attributes"], "css_selector"),  # CSS Selector
+            match["step"],
+            match["page"],
+            get_attribute_simple(match["element"]["attributes"], "id"),
+            get_attribute_simple(match["element"]["attributes"], "class"),
+            get_attribute_simple(match["element"]["attributes"], "name"),
+            get_attribute_simple(match["element"]["attributes"], "value"),
+            get_attribute_simple(match["element"]["attributes"], "xpath_absolute"),
+            get_attribute_simple(match["element"]["attributes"], "xpath_relative"),
+            get_attribute_simple(match["element"]["attributes"], "css_selector"),
         ])
+    
+    project_id = data.get('project_id')
+    Scenarios.objects.create(
+            project_id=project_id, 
+            mapping_file=response
+        )
 
-    return Response(response)
+    return Response("Added Successfully")
 
 
 
@@ -162,6 +172,7 @@ def execute_tests(request):
     data = request.data
     project_id = data.get('project_id')
     scenarios = Scenarios.objects.get(project_id=project_id)
+    print(scenarios.mapping_file)
     mapping = scenarios.mapping_file
     header = mapping[0]
     result = [dict(zip(header, row)) for row in mapping[1:]]
@@ -170,6 +181,7 @@ def execute_tests(request):
     try:
         framework.driver.get(mapping[1][1])
         framework.execute_all_steps(delay=0.0)
+        print(framework.report())
         return Response({"message":framework.report(),"success":True})
     finally:
         framework.close()
