@@ -6,3 +6,4 @@ Scenario: Successful login with valid credentials
     And I enter password "password123"
     And I click the login button
     Then I should see the dashboard
+
