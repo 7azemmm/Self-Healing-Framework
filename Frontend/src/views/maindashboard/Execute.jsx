@@ -11,6 +11,7 @@ import {
   ListItem,
   ListIcon,
   Select,
+  Input, // Added Input for execution name
   useToast,
 } from "@chakra-ui/react";
 import { WarningIcon, InfoOutlineIcon } from "@chakra-ui/icons";
@@ -30,6 +31,7 @@ const Execute = () => {
     failedDetails: [],
   });
   const [selectedProject, setSelectedProject] = useState("");
+  const [executionName, setExecutionName] = useState(""); // New state for execution name
   const [projects, setProjects] = useState([]);
   const toast = useToast();
 
@@ -68,39 +70,72 @@ const Execute = () => {
 
     try {
       const token = localStorage.getItem("access_token");
-      const response = await axios.post("http://localhost:8000/api/execute_tests/", {
-        project_id: selectedProject,
+      const response = await axios.post(
+        "http://localhost:8000/api/execute_tests/",
+        {
+          project_id: selectedProject,
+          execution_name: executionName || "Default Execution", // Send execution_name, fallback to default
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      setTestResults({
+        success: response.data.success,
+        passedElements: response.data.passedElements || 0, // Fallback if not provided
+        failedElements: response.data.failedElements || 0,
+        executionTime: response.data.executionTime || "0 seconds",
+        logs: response.data.logs || [],
+        failedDetails: response.data.failedDetails || [],
       });
-      setTestResults(response.data);
+
       toast({
         title: "Test execution completed.",
-        description: response.data.success ? "All tests passed!" : "Some tests failed.",
-        status: response.data.success ? "success" : "error",
+        description: response.data.success ? "All tests passed!" : "Tests completed with healing.",
+        status: response.data.success ? "success" : "warning",
         duration: 3000,
         isClosable: true,
       });
-      const data = response.data.message
-      const parsedData = JSON.parse(data);
+
+      const data = response.data.message;
+      const parsedData = typeof data === "string" ? JSON.parse(data) : data;
       console.log(parsedData);
-      const map = Object.keys(parsedData).map(oldId => {
-        const newId = parsedData[oldId].new_strategies.id;
-        return `${oldId} was fixed to ${newId}`;
-      });
-      console.log(map);
-      map.forEach(element => {
+
+      if (parsedData.message) {
+        // Case where no healing occurred
         toast({
-          title: "Strategy ID Fix",
-          description: element,
+          title: "Execution Report",
+          description: parsedData.message,
           status: "info",
           duration: 3000,
           isClosable: true,
         });
-      });
+      } else {
+        // Case where healing occurred
+        const map = Object.keys(parsedData).map(oldId => {
+          const newId = parsedData[oldId].new_strategies?.id || "unknown";
+          return `${oldId} was fixed to ${newId}`;
+        });
+        console.log(map);
+        map.forEach(element => {
+          toast({
+            title: "Strategy ID Fix",
+            description: element,
+            status: "info",
+            duration: 3000,
+            isClosable: true,
+          });
+        });
+      }
     } catch (error) {
       console.log(error);
       toast({
         title: "Test execution failed.",
-        description: error.message,
+        description: error.response?.data?.detail || error.message,
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -145,6 +180,13 @@ const Execute = () => {
                 </option>
               ))}
             </Select>
+
+            {/* Input for execution name */}
+            <Input
+              placeholder="Enter Execution Name (optional)"
+              value={executionName}
+              onChange={(e) => setExecutionName(e.target.value)}
+            />
 
             <Button
               colorScheme="blue"
