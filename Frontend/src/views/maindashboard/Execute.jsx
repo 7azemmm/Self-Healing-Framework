@@ -39,7 +39,7 @@ const Execute = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/get_projects/");
+        const response = await axios.get("/get_projects/");
         setProjects(response.data);
       } catch (error) {
         toast({
@@ -71,7 +71,7 @@ const Execute = () => {
     try {
       const token = localStorage.getItem("access_token");
       const response = await axios.post(
-        "http://localhost:8000/api/execute_tests/",
+        "/execute_tests/",
         {
           project_id: selectedProject,
           execution_name: executionName || "Default Execution", // Send execution_name, fallback to default

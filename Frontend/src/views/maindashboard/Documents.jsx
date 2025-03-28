@@ -36,7 +36,7 @@ const Documents = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/get_projects/");
+        const response = await axios.get("/get_projects/");
         setProjects(response.data);
       } catch (error) {
         toast({
@@ -84,7 +84,7 @@ const Documents = () => {
     formData.append("project_id", selectedProject);
 
     try {
-      const response = await axios.post("http://localhost:8000/api/documents/", formData, {
+      const response = await axios.post("/documents/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -112,7 +112,7 @@ const Documents = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/api/delete_document/${id}/`);
+      await axios.delete(`/delete_document/${id}/`);
       setUploadedFiles(uploadedFiles.filter((file) => file.id !== id));
       toast({
         title: "File deleted.",

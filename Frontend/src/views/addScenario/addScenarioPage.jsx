@@ -15,7 +15,7 @@ const AddScenario = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/get_projects/");
+        const response = await axios.get("/get_projects/");
         setProjects(response.data);
       } catch (error) {
         toast({
@@ -54,7 +54,7 @@ const AddScenario = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8000/api/scenario/", {
+      const response = await axios.post("/scenario/", {
         project_id: selectedProject,
         bdd: scenario,
         links: urls,

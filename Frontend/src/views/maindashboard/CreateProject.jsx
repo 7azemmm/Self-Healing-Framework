@@ -25,7 +25,7 @@ const CreateProject = () => {
       const token = localStorage.getItem("access_token");
 
       const response = await axios.post(
-        "http://localhost:8000/api/create_project/",
+        "/create_project/",
         {
           project_name: projectName,
         },

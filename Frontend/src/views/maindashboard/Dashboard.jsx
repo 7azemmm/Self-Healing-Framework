@@ -31,7 +31,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/get_projects/');
+        const response = await axios.get('/get_projects/');
         setProjects(response.data);
         if (response.data.length > 0) {
           setSelectedProjectId(response.data[0].project_id); // Default to first project
@@ -46,7 +46,7 @@ const Dashboard = () => {
   // Fetch metrics from backend when selectedProjectId changes
   useEffect(() => {
     if (selectedProjectId) {
-      axios.get(`http://localhost:8000/api/metrics/${selectedProjectId}/`)
+      axios.get(`/metrics/${selectedProjectId}/`)
         .then(response => {
           const data = response.data;
 

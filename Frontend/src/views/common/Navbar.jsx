@@ -1,5 +1,6 @@
-import { Flex, Text, Avatar, IconButton } from "@chakra-ui/react";
+import { Flex, Text, Avatar, IconButton,Link } from "@chakra-ui/react";
 import { FiSettings } from "react-icons/fi";
+
 
 const Navbar = () => {
   return (
@@ -17,13 +18,16 @@ const Navbar = () => {
         Dashboard
       </Text>
       <Flex align="center">
+        <Link  href="/settings">
         <IconButton
           icon={<FiSettings />}
           variant="ghost"
           aria-label="Settings"
           mr={4}
+          
         />
-        <Avatar size="sm" name="MIU" />
+        </Link>
+        <Avatar size="sm" name="Profile" />
       </Flex>
     </Flex>
   );

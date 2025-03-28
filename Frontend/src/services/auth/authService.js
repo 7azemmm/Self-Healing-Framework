@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api';
+axios.defaults.baseURL=API_URL;
 
 export const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/login/`, { email, password });
+    const response = await axios.post(`/login/`, { email, password });
     localStorage.setItem('access_token', response.data.access); 
     return response.data;
   } catch (error) {
@@ -14,7 +15,7 @@ export const login = async (email, password) => {
 
 export const signup = async (fullName, email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/signup/`, {
+    const response = await axios.post(`/signup/`, {
       full_name: fullName,
       email,
       password,
