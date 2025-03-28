@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Box, 
   Text, 
@@ -8,28 +10,86 @@ import {
   Tbody, 
   Tr, 
   Th, 
-  Td 
+  Td,
+  Select
 } from "@chakra-ui/react";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import PropTypes from 'prop-types'; // Added for prop-types validation
 
 const Dashboard = () => {
-  // Static data for healed elements
-  const healedElements = [
-    { name: "First Execution", type: "input", date: "11 Feb 2025", pastId: "iemail", newId: "email" },
-    { name: "First Execution", type: "input", date: "11 Feb 2025", pastId: "pass", newId: "password" },
-    { name: "Second Execution", type: "button", date: "11 Dec 2025", pastId: "btn-register", newId: "btn-signup" },
-    { name: "Second Execution", type: "input", date: "11 Dec 2025", pastId: "input-addr", newId: "input-address" },
-    { name: "Second Execution", type: "radio", date: "11 Dec 2025", pastId: "radio-gender", newId: "radio-sex" },
-    { name: "Second Execution", type: "check", date: "11 Dec 2025", pastId: "check-remember", newId: "check-rememberme" },
-  ];
+  // State for dynamic data
+  const [totalScenarios, setTotalScenarios] = useState(0);
+  const [totalHealedElements, setTotalHealedElements] = useState(0);
+  const [executionData, setExecutionData] = useState([]);
+  const [healedElements, setHealedElements] = useState([]);
+  const [projects, setProjects] = useState([]); // State for list of projects
+  const [selectedProjectId, setSelectedProjectId] = useState(''); // State for selected project
 
-  // Sample data for the bar chart: executions and their counts
-  const executionData = [
-    { name: "Execution 1", count: 2 },
-    { name: "Execution 2", count: 4 },
-  ];
+  // Fetch projects from backend when component mounts
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/get_projects/');
+        setProjects(response.data);
+        if (response.data.length > 0) {
+          setSelectedProjectId(response.data[0].project_id); // Default to first project
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // Fetch metrics from backend when selectedProjectId changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      axios.get(`http://localhost:8000/api/metrics/${selectedProjectId}/`)
+        .then(response => {
+          const data = response.data;
+
+          // Calculate totals for stat cards
+          const totalScen = data.reduce((sum, metric) => sum + metric.number_of_scenarios, 0);
+          const totalHealed = data.reduce((sum, metric) => sum + metric.number_of_healed_elements, 0);
+          setTotalScenarios(totalScen);
+          setTotalHealedElements(totalHealed);
+
+          // Prepare data for bar chart (executions with healed elements count)
+          const execData = data.map((metric, index) => ({
+            name: `Execution ${index + 1}`,
+            count: metric.number_of_healed_elements
+          }));
+          setExecutionData(execData);
+
+          // Flatten healed elements for the table
+          const healedElems = data.flatMap((metric, index) => 
+            (metric.healed_elements || []).map(elem => ({
+              name: `Execution ${index + 1}`,
+              type: 'unknown', // Type not available; adjust if backend provides it
+              date: new Date(elem.created_at).toLocaleDateString(),
+              pastId: elem.past_element_attribute,
+              newId: elem.new_element_attribute
+            }))
+          );
+          setHealedElements(healedElems);
+        })
+        .catch(error => {
+          console.error('Error fetching metrics:', error);
+          // Reset data on error
+          setTotalScenarios(0);
+          setTotalHealedElements(0);
+          setExecutionData([]);
+          setHealedElements([]);
+        });
+    }
+  }, [selectedProjectId]);
+
+  // Handle project selection change
+  const handleProjectChange = (event) => {
+    setSelectedProjectId(event.target.value);
+  };
 
   return (
     <Flex h="100vh" overflow="hidden">
@@ -37,10 +97,30 @@ const Dashboard = () => {
       <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
         <Navbar />
         <Box flex="1" px={6} py={4} overflowY="auto" display="flex" flexDirection="column">
+          {/* Project Selection Dropdown */}
+          <Box mb={6}>
+            <Text fontWeight="bold" mb={2}>Select Project</Text>
+            <Select 
+              value={selectedProjectId} 
+              onChange={handleProjectChange} 
+              placeholder="Choose a project"
+            >
+              {projects.map(project => (
+                <option key={project.project_id} value={project.project_id}>
+                  {project.project_name}
+                </option>
+              ))}
+            </Select>
+          </Box>
+
           {/* Stat Cards */}
           <Flex gap={6} justify="space-evenly" mb={8}>
-            <StatCard title="Scenarios" value="2" />
-            <StatCard title="Healed Elements" value="79%" progress={79} />
+            <StatCard title="Scenarios" value={totalScenarios.toString()} />
+            <StatCard 
+              title="Healed Elements" 
+              value={`${Math.round((totalHealedElements / (totalScenarios || 1)) * 100)}%`} 
+              progress={Math.round((totalHealedElements / (totalScenarios || 1)) * 100)} 
+            />
           </Flex>
 
           {/* Main Content */}
@@ -97,6 +177,11 @@ const Dashboard = () => {
       </Box>
     </Flex>
   );
+};
+
+// Define propTypes for Dashboard (even though not used now, kept for consistency)
+Dashboard.propTypes = {
+  projectId: PropTypes.string,
 };
 
 // eslint-disable-next-line react/prop-types
