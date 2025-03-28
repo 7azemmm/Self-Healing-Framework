@@ -4,13 +4,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model  # Import get_user_model
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer,MetricsSerializer
 from .controllers.mapping import MappingProcessor
-from .models import Project,Scenarios
+from .models import Project,Scenarios,Metrics,Execution
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
 from .controllers.heal import SelfHealingFramework
+import json
 
 User = get_user_model()  # Get the custom user model
 
@@ -171,8 +172,16 @@ def get_projects(request):
 def execute_tests(request):
     data = request.data
     project_id = data.get('project_id')
+    execution_name = data.get('execution_name', 'Default Execution')  # Default name if not provided
+
+    # Create a new execution entry
+    execution = Execution.objects.create(
+        execution_name=execution_name,
+        project_id=project_id
+    )
+
+    # Get the scenario and execute tests
     scenarios = Scenarios.objects.get(project_id=project_id)
-    print(scenarios.mapping_file)
     mapping = scenarios.mapping_file
     header = mapping[0]
     result = [dict(zip(header, row)) for row in mapping[1:]]
@@ -181,7 +190,28 @@ def execute_tests(request):
     try:
         framework.driver.get(mapping[1][1])
         framework.execute_all_steps(delay=0.0)
-        print(framework.report())
-        return Response({"message":framework.report(),"success":True})
+        report = framework.report()
+
+        # Parse the report to extract metrics
+        # Assuming report is a JSON string; adjust based on actual report structure
+        report_data = json.loads(report) if isinstance(report, str) else report
+        number_of_scenarios = len(result)  # Example: number of scenario rows in mapping
+        number_of_healed_elements = len(report_data) if isinstance(report_data, dict) else 0  # Adjust based on report
+
+        # Save metrics to the Metrics model
+        Metrics.objects.create(
+            execution=execution,
+            number_of_scenarios=number_of_scenarios,
+            number_of_healed_elements=number_of_healed_elements
+        )
+
+        return Response({"message": report, "success": True})
     finally:
         framework.close()
+        
+        
+@api_view(['GET'])
+def get_metrics(request, project_id):
+    metrics = Metrics.objects.filter(execution__project_id=project_id)
+    serializer = MetricsSerializer(metrics, many=True)
+    return Response(serializer.data)

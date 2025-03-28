@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Project,Scenarios
+from .models import Project,Scenarios,Metrics
 
 User = get_user_model()
 
@@ -40,3 +40,8 @@ class ScenarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scenarios
         fields = '__all__'
+
+class MetricsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Metrics
+        fields = ['metrics_id', 'execution', 'number_of_scenarios', 'number_of_healed_elements', 'created_at']
