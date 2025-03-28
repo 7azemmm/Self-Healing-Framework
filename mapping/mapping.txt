@@ -1,4 +1,4 @@
-Page URL: https://miu.hajat.com.ly/login.html
+Page URL: https://melkmeshi.github.io/miu/login.html
 
 Feature: login
 

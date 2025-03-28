@@ -27,7 +27,7 @@ public class LoginPage {
     }
 
     public void navigateToLoginPage() {
-        driver.get("https://miu.hajat.com.ly/login.html");
+        driver.get("https://melkmeshi.github.io/miu/login.html");
         // Add wait for page load if needed
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.visibilityOf(emailInput));

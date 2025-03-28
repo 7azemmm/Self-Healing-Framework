@@ -27,7 +27,7 @@ public class LoginPage {
     }
 
     public void navigateTosignupPage() {
-        driver.get("https://miu.hajat.com.ly/registration.html");
+        driver.get("https://melkmeshi.github.io/miu/registration.html");
         // Add wait for page load if needed
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.visibilityOf(emailInput));
