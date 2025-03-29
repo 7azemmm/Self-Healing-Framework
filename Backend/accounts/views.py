@@ -75,13 +75,60 @@ def healing(request):
         framework.close()
 
 
+# @api_view(['POST'])
+# def scenario(request):
+#     data = request.data
+#     bdd = data.get('bdd')
+#     links = data.get('links')
+#     print("Starting the script...")
+
+#     print("Processing BDD scenario...")
+#     bdd_scenario = process_bdd(bdd)
+#     print("BDD scenario processed.")
+
+#     print("Processing HTML pages...")
+#     html_pages = process_html(links.split("\n"))
+#     print("HTML pages processed.")
+
+#     print("Performing mapping...")
+#     mappings = map_bdd_to_html(bdd_scenario, html_pages)
+#     print("Mapping completed.")
+
+#     print("Writing results to CSV...")
+#     response = [[
+#         "Step", "Page", "ID", "Class", "Name", "Value",
+#         "XPath (Absolute)", "XPath (Relative)", "CSS Selector"
+#     ]]
+#     for match in mappings:
+#         response.append([
+#             match["step"],
+#             match["page"],
+#             get_attribute_simple(match["element"]["attributes"], "id"),
+#             get_attribute_simple(match["element"]["attributes"], "class"),
+#             get_attribute_simple(match["element"]["attributes"], "name"),
+#             get_attribute_simple(match["element"]["attributes"], "value"),
+#             get_attribute_simple(match["element"]["attributes"], "xpath_absolute"),
+#             get_attribute_simple(match["element"]["attributes"], "xpath_relative"),
+#             get_attribute_simple(match["element"]["attributes"], "css_selector"),
+#         ])
+    
+#     project_id = data.get('project_id')
+#     Scenarios.objects.create(
+#             project_id=project_id, 
+#             mapping_file=response
+#         )
+
+#     return Response("Added Successfully")
+
+
 @api_view(['POST'])
 def scenario(request):
     data = request.data
     bdd = data.get('bdd')
     links = data.get('links')
-    print("Starting the script...")
+    project_id = data.get('project_id')
 
+    print("Starting the script...")
     print("Processing BDD scenario...")
     bdd_scenario = process_bdd(bdd)
     print("BDD scenario processed.")
@@ -112,11 +159,22 @@ def scenario(request):
             get_attribute_simple(match["element"]["attributes"], "css_selector"),
         ])
     
-    project_id = data.get('project_id')
-    Scenarios.objects.create(
-            project_id=project_id, 
-            mapping_file=response
-        )
+   
+    scenario_obj, created = Scenarios.objects.get_or_create(project_id=project_id)
+
+   
+    if not created:
+        existing_mapping = scenario_obj.mapping_file
+        if isinstance(existing_mapping, list): 
+            existing_mapping.extend(response[1:])  
+        else:
+            existing_mapping = response  
+
+        scenario_obj.mapping_file = existing_mapping
+        scenario_obj.save()
+    else:
+        scenario_obj.mapping_file = response
+        scenario_obj.save()
 
     return Response("Added Successfully")
 

@@ -417,7 +417,7 @@ def get_embedding(text):
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
     with torch.no_grad():
         outputs = model(**inputs)
-    return outputs.last_hidden_state.mean(dim=1)  # Average pooling
+    return outputs.last_hidden_state.mean(dim=1)  
 
 def generate_semantic_description(text, summarizer):
     """
