@@ -17,7 +17,7 @@ class ProjectTestCase(APITestCase):
         self.access_token = str(AccessToken.for_user(self.user))
 
         # URL for project creation
-        self.create_project_url = reverse("create_project")  # Ensure the name is correct in urls.py
+        self.create_project_url = reverse("create_project")  
 
     def test_create_project_success(self):
         """Test project creation with authentication"""
