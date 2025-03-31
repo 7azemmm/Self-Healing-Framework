@@ -105,11 +105,13 @@ class MappingLoader:
             css = row['CSS Selector'].strip()
             xpath = row['XPath (Absolute)'].strip()
             full_xpath = row['XPath (Absolute)'].strip()
+            link = row['Page'].strip()
             mappings[bdd_step] = {
                 'ID': element_id,
                 'CSS Selector': css,
                 'XPath (Absolute)': xpath,
                 'XPath (Absolute)': full_xpath,
+                'Page': link,
                 'locator_strategies': self._generate_locator_strategies(element_id, css, xpath, full_xpath)
             }
         return mappings
@@ -171,6 +173,10 @@ class SelfHealingFramework:
     def execute_all_steps(self, delay=1.5):
         """Automatically execute all BDD steps from the CSV."""
         for bdd_step, element_info in self.mappings.items():
+            current_url = self.driver.current_url
+            if current_url != element_info['Page']:
+                self.driver.get(element_info['Page'])
+                time.sleep(delay)
             action, value = self._determine_action(bdd_step)
             try:
                 element = self.find_element(bdd_step)
