@@ -6,6 +6,10 @@ from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 from accounts.models import Project  
 
+
+### pre-requisite for this testcase : need to create auth user to create project
+
+### goal : test creating project in both successfull and failure scenario
 User = get_user_model()
 
 class ProjectTestCase(APITestCase):

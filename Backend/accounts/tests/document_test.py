@@ -6,6 +6,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from accounts.models import Project, Scenarios, CustomUser
 from accounts.controllers.mapping import MappingProcessor
 
+
+### pre-requisite for this testcase : need to create auth user to make project to can be able to add docs to it
+
+### goal : docs added to project successfully
+
 class DocumentsAPITestCase(APITestCase):
     
     def setUp(self):
@@ -15,14 +20,12 @@ class DocumentsAPITestCase(APITestCase):
             email="test@example.com", password="Test@1234", full_name="Test User"
         )
         
-        # Generate authentication token
+        
         self.access_token = str(AccessToken.for_user(self.user))
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
 
-        # Create project linked to user
         self.project = Project.objects.create(project_name="Test Project", user=self.user)
 
-        # Define API URL
         self.url = '/api/documents/'  
 
     @patch.object(MappingProcessor, 'process_all_features', return_value=['mapping_result.json'])

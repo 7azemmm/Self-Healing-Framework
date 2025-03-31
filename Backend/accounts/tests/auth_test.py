@@ -2,6 +2,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+
+
+### pre-requisite for this testcase : nothing
+
+### goal : create registered user then make login to check authentication in successfull and failures scenarios
 class AuthTestCase(APITestCase):
     def setUp(self):
         self.signup_url = "http://localhost:8000/api/signup/"  

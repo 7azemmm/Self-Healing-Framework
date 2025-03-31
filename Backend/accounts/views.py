@@ -160,7 +160,7 @@ def scenario(request):
         ])
     
    
-    scenario_obj, created = Scenarios.objects.get_or_create(project_id=project_id)
+    scenario_obj, created = Scenarios.objects.get_or_create(project_id=project_id ,  defaults={"mapping_file": []})
 
    
     if not created:
