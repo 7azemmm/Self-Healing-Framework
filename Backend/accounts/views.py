@@ -246,7 +246,7 @@ def execute_tests(request):
     framework = SelfHealingFramework(result)
     framework.start_browser()
     try:
-        framework.driver.get(mapping[1][1])
+        # framework.driver.get(mapping[1][1])
         framework.execute_all_steps(delay=0.0)
         report = framework.report()
 
