@@ -86,13 +86,18 @@ const Execute = () => {
       let healingReport;
       let numberOfScenarios = 0;
       if (typeof message === "string") {
-        healingReport = JSON.parse(message);
+        healingReport = Object.entries(JSON.parse(message)).reduce((acc, [key, value]) => {
+          if (key !== "N/A") {
+            acc[key] = value;
+          }
+          return acc;
+        }, {});;
+
         numberOfScenarios = Object.keys(healingReport).length > 0 ? 1 : 0; // Approximate; adjust if backend provides exact count
       } else {
         healingReport = message;
         numberOfScenarios = 0; // No healing implies scenarios ran without issues
       }
-
       setTestResults({
         success: response.data.success,
         numberOfScenarios: numberOfScenarios,
