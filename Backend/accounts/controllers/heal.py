@@ -137,7 +137,7 @@ class ActionExecutor:
             element.click()
         elif action == "input":
             element.clear()
-            element.send_keys("hazem@123")
+            element.send_keys(value)
         elif action == "verify":
             is_visible = element.is_displayed()
         elif action == "select":
@@ -191,13 +191,13 @@ class SelfHealingFramework:
         if "click" in bdd_step_lower:
             return "click", None
         elif "enter" in bdd_step_lower:
-            match = re.search(r"enter (.+)", bdd_step_lower)
+            match = re.search(r'enter\s+"([^"]+)"', bdd_step_lower)
             value = match.group(1) if match else "default value"
             return "input", value
         elif "verify" in bdd_step_lower or "redirected" in bdd_step_lower:
             return "verify", None
         elif "select" in bdd_step_lower:
-            match = re.search(r"select (.+)", bdd_step_lower)
+            match = re.search(r'select\s+"([^"]+)"', bdd_step_lower)
             value = match.group(1) if match else "default option"
             return "select", value
         elif "checkbox" in bdd_step_lower:
@@ -208,7 +208,7 @@ class SelfHealingFramework:
             else:
                 return "checkbox", "toggle"
         elif "choose" in bdd_step_lower:
-            match = re.search(r"choose (.+)", bdd_step_lower)
+            match = re.search(r'choose\s+"([^"]+)"', bdd_step_lower)
             value = match.group(1) if match else "default radio option"
             return "radio", value
         return None, None
