@@ -31,7 +31,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/get_projects/'); // Adjust URL as needed
+        const response = await axios.get('/get_projects/'); // Adjust URL as needed
         setProjects(response.data);
         if (response.data.length > 0) {
           setSelectedProjectId(response.data[0].project_id);
@@ -48,7 +48,7 @@ const Dashboard = () => {
     if (selectedProjectId) {
       const fetchProjectMetrics = async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/project_metrics/${selectedProjectId}/`);
+          const response = await axios.get(`/project_metrics/${selectedProjectId}/`);
           const data = response.data;
           setTotalScenarios(data.total_scenarios);
           setTotalHealedElements(data.total_healed_elements);
