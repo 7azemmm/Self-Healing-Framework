@@ -206,7 +206,7 @@ class SelfHealingFramework:
         if "click" in bdd_step_lower:
             return "click", None
         elif "enter" in bdd_step_lower:
-            match = re.search(r'enter\s+\w*\s*"([^"]+)"', bdd_step_lower)
+            match = re.search(r'enter\s+.*?"{1,3}([^"]+)"{1,3}', bdd_step_lower.lower())
             value = match.group(1) if match else "default value"
             return "input", value
         elif "verify" in bdd_step_lower or "redirected" in bdd_step_lower:
