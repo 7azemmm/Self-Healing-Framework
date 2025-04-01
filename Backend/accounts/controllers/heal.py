@@ -137,7 +137,7 @@ class ActionExecutor:
             element.click()
         elif action == "input":
             element.clear()
-            element.send_keys(value)
+            element.send_keys("hazem@123")
         elif action == "verify":
             is_visible = element.is_displayed()
         elif action == "select":
