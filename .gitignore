@@ -5,3 +5,4 @@ mapping.csv.bak
 healing_report.json
 venv/
 *.pyc
+.vscode
