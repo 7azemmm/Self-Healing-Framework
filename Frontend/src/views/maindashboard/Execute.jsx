@@ -3,18 +3,19 @@ import {
   Text,
   Button,
   VStack,
-  HStack,
   Card,
   CardBody,
   CardHeader,
-  List,
-  ListItem,
-  ListIcon,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   Select,
-  Input, // Added Input for execution name
+  Input,
   useToast,
 } from "@chakra-ui/react";
-import { WarningIcon, InfoOutlineIcon } from "@chakra-ui/icons";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
@@ -24,14 +25,11 @@ const Execute = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [testResults, setTestResults] = useState({
     success: false,
-    passedElements: 0,
-    failedElements: 0,
-    executionTime: "0 seconds",
-    logs: [],
-    failedDetails: [],
+    numberOfScenarios: 0,
+    healingReport: null,
   });
   const [selectedProject, setSelectedProject] = useState("");
-  const [executionName, setExecutionName] = useState(""); // New state for execution name
+  const [executionName, setExecutionName] = useState("");
   const [projects, setProjects] = useState([]);
   const toast = useToast();
 
@@ -39,7 +37,7 @@ const Execute = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get("/get_projects/");
+        const response = await axios.get("http://localhost:8000/api/get_projects/");
         setProjects(response.data);
       } catch (error) {
         toast({
@@ -71,71 +69,59 @@ const Execute = () => {
     try {
       const token = localStorage.getItem("access_token");
       const response = await axios.post(
-        "/execute_tests/",
+        "http://localhost:8000/api/execute_tests/",
         {
           project_id: selectedProject,
-          execution_name: executionName || "Default Execution", // Send execution_name, fallback to default
+          execution_name: executionName || "Default Execution",
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-          }
+          },
         }
       );
 
+      const message = response.data.message;
+      let healingReport;
+      let numberOfScenarios = 0;
+      if (typeof message === "string") {
+        healingReport = JSON.parse(message);
+        numberOfScenarios = Object.keys(healingReport).length > 0 ? 1 : 0; // Approximate; adjust if backend provides exact count
+      } else {
+        healingReport = message;
+        numberOfScenarios = 0; // No healing implies scenarios ran without issues
+      }
+
       setTestResults({
         success: response.data.success,
-        passedElements: response.data.passedElements || 0, // Fallback if not provided
-        failedElements: response.data.failedElements || 0,
-        executionTime: response.data.executionTime || "0 seconds",
-        logs: response.data.logs || [],
-        failedDetails: response.data.failedDetails || [],
+        numberOfScenarios: numberOfScenarios,
+        healingReport: healingReport,
       });
 
-      toast({
-        title: "Test execution completed.",
-        description: response.data.success ? "All tests passed!" : "Tests completed with healing.",
-        status: response.data.success ? "success" : "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-
-      const data = response.data.message;
-      const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-      console.log(parsedData);
-
-      if (parsedData.message) {
-        // Case where no healing occurred
+      if (healingReport.message) {
         toast({
-          title: "Execution Report",
-          description: parsedData.message,
-          status: "info",
+          title: "Execution Complete",
+          description: healingReport.message,
+          status: "success",
           duration: 3000,
           isClosable: true,
         });
       } else {
-        // Case where healing occurred
-        const map = Object.keys(parsedData).map(oldId => {
-          const newId = parsedData[oldId].new_strategies?.id || "unknown";
-          return `${oldId} was fixed to ${newId}`;
-        });
-        console.log(map);
-        map.forEach(element => {
-          toast({
-            title: "Strategy ID Fix",
-            description: element,
-            status: "info",
-            duration: 3000,
-            isClosable: true,
-          });
+        const healedCount = Object.keys(healingReport).length;
+        toast({
+          title: "Tests completed with healing",
+          description: `Healed ${healedCount} elements across ${numberOfScenarios} scenarios.`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
         });
       }
     } catch (error) {
-      console.log(error);
+      const errorMessage = error.response?.data?.error || error.message;
       toast({
         title: "Test execution failed.",
-        description: error.response?.data?.detail || error.message,
+        description: errorMessage,
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -166,9 +152,8 @@ const Execute = () => {
             Execute Test Scenarios
           </Text>
 
-          {/* Main Execution Controls */}
+          {/* Execution Controls */}
           <VStack align="stretch" mb={8} spacing={4}>
-            {/* Dropdown to select a project */}
             <Select
               placeholder="Select Project to Execute"
               onChange={(e) => setSelectedProject(e.target.value)}
@@ -180,14 +165,11 @@ const Execute = () => {
                 </option>
               ))}
             </Select>
-
-            {/* Input for execution name */}
             <Input
               placeholder="Enter Execution Name (optional)"
               value={executionName}
               onChange={(e) => setExecutionName(e.target.value)}
             />
-
             <Button
               colorScheme="blue"
               size="lg"
@@ -206,112 +188,60 @@ const Execute = () => {
             </Button>
           </VStack>
 
-          {/* Execution Insights */}
-          <Box mb={8}>
-            <Card bg="white" boxShadow="sm" borderRadius="md">
-              <CardHeader>
-                <Text fontSize="lg" fontWeight="bold" color="blue.500">
-                  Test Execution Insights
-                </Text>
-              </CardHeader>
-              <CardBody>
-                {isExecuting && (
-                  <Text color="yellow.500" fontSize="sm" mb={4}>
-                    Test is currently running...
-                  </Text>
-                )}
-                {!isExecuting && (
-                  <>
-                    <Text
-                      color={testResults.success ? "green.500" : "red.500"}
-                      fontSize="md"
-                      mb={4}
-                    >
-                      {testResults.success
-                        ? "All pages tested successfully!"
-                        : "Some tests failed during execution."}
-                    </Text>
-                    <HStack spacing={6} mb={4}>
-                      <Box>
-                        <Text fontSize="sm" color="gray.600">
-                          Passed Elements
-                        </Text>
-                        <Text fontSize="2xl" fontWeight="bold" color="green.500">
-                          {testResults.passedElements}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="gray.600">
-                          Failed Elements
-                        </Text>
-                        <Text fontSize="2xl" fontWeight="bold" color="red.500">
-                          {testResults.failedElements}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="gray.600">
-                          Execution Time
-                        </Text>
-                        <Text fontSize="2xl" fontWeight="bold" color="blue.500">
-                          {testResults.executionTime}
-                        </Text>
-                      </Box>
-                    </HStack>
-                  </>
-                )}
-              </CardBody>
-            </Card>
-          </Box>
-
-          {/* Failed Elements List */}
-          {testResults.failedElements > 0 && (
-            <Box>
-              <Card bg="white" boxShadow="sm" borderRadius="md">
-                <CardHeader>
-                  <Text fontSize="lg" fontWeight="bold" color="red.500">
-                    Failed Elements
-                  </Text>
-                </CardHeader>
-                <CardBody>
-                  <List spacing={3}>
-                    {testResults.failedDetails.map((element, index) => (
-                      <ListItem key={index}>
-                        <HStack>
-                          <ListIcon as={WarningIcon} color="red.500" />
-                          <Text fontSize="sm" color="gray.600">
-                            <strong>{element.id}</strong>: {element.issue}
-                          </Text>
-                        </HStack>
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardBody>
-              </Card>
-            </Box>
-          )}
-
-          {/* Test Logs */}
-          {testResults.logs && (
-            <Box mt={8}>
+          {/* Test Execution Insights */}
+          {!isExecuting && testResults.healingReport && (
+            <Box mb={8}>
               <Card bg="white" boxShadow="sm" borderRadius="md">
                 <CardHeader>
                   <Text fontSize="lg" fontWeight="bold" color="blue.500">
-                    Execution Logs
+                    Test Execution Insights
                   </Text>
                 </CardHeader>
                 <CardBody>
-                  <List spacing={3}>
-                    {testResults.logs.map((log, index) => (
-                      <ListItem key={index}>
-                        <HStack>
-                          <ListIcon as={InfoOutlineIcon} color="blue.500" />
-                          <Text fontSize="sm" color="gray.600">
-                            {log}
-                          </Text>
-                        </HStack>
-                      </ListItem>
-                    ))}
-                  </List>
+                  {testResults.healingReport.message ? (
+                    <VStack align="start" spacing={2}>
+                      <Text color="green.500" fontSize="md">
+                        {testResults.healingReport.message}
+                      </Text>
+                      <Text fontSize="md">
+                        Number of scenarios executed: {testResults.numberOfScenarios}
+                      </Text>
+                    </VStack>
+                  ) : (
+                    <VStack align="start" spacing={4}>
+                      <Text color="orange.500" fontSize="md">
+                        Tests completed with healing
+                      </Text>
+                      <Text fontSize="md">
+                        Number of scenarios executed: {testResults.numberOfScenarios}
+                      </Text>
+                      <Text fontSize="md">
+                        Number of healed elements: {Object.keys(testResults.healingReport).length}
+                      </Text>
+                      <Table size="sm" variant="simple">
+                        <Thead>
+                          <Tr>
+                            <Th>Element ID</Th>
+                            <Th>Timestamp</Th>
+                            <Th>Original ID</Th>
+                            <Th>New ID</Th>
+                            <Th>Note</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {Object.entries(testResults.healingReport).map(([oldId, details]) => (
+                            <Tr key={oldId}>
+                              <Td>{oldId}</Td>
+                              <Td>{details.timestamp}</Td>
+                              <Td>{details.original_strategies.id}</Td>
+                              <Td>{details.new_strategies.id}</Td>
+                              <Td>{details.note}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </VStack>
+                  )}
                 </CardBody>
               </Card>
             </Box>

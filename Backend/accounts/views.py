@@ -4,14 +4,15 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model  # Import get_user_model
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer,MetricsSerializer
+from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer,MetricsSerializer,ProjectMetricsSerializer
 from .controllers.mapping import MappingProcessor
-from .models import Project,Scenarios,Metrics,Execution
+from .models import Project,Scenarios,Metrics,Execution,HealedElements
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
 from .controllers.heal import SelfHealingFramework
 import json
+from django.db.models import Sum
 
 User = get_user_model()  # Get the custom user model
 
@@ -230,7 +231,11 @@ def get_projects(request):
 def execute_tests(request):
     data = request.data
     project_id = data.get('project_id')
-    execution_name = data.get('execution_name', 'Default Execution')  # Default name if not provided
+    execution_name = data.get('execution_name', 'Default Execution')  # Default if not provided
+
+    # Validate project_id
+    if not project_id:
+        return Response({"error": "project_id is required"}, status=400)
 
     # Create a new execution entry
     execution = Execution.objects.create(
@@ -238,40 +243,82 @@ def execute_tests(request):
         project_id=project_id
     )
 
-    # Get the scenario and execute tests
-    scenarios = Scenarios.objects.get(project_id=project_id)
-    mapping = scenarios.mapping_file
-    print("Mapping Data:", mapping)
-    header = mapping[0]
-    result = [dict(zip(header, row)) for row in mapping[1:]]
-    framework = SelfHealingFramework(result)
-    framework.start_browser()
     try:
-        # framework.driver.get(mapping[1][1])
-        framework.execute_all_steps(delay=0.0)
-        report = framework.report()
+        # Retrieve scenarios for the project
+        scenarios = Scenarios.objects.get(project_id=project_id)
+        mapping = scenarios.mapping_file
+        print("Mapping Data:", mapping)
+        header = mapping[0]
+        result = [dict(zip(header, row)) for row in mapping[1:]]
+        framework = SelfHealingFramework(result)
 
-        # Parse the report to extract metrics
-        # Assuming report is a JSON string; adjust based on actual report structure
-        report_data = json.loads(report) if isinstance(report, str) else report
-        # Extract scenarios correctly
-        number_of_scenarios = sum(1 for row in result if row["Step"].strip().startswith("When"))
-        number_of_healed_elements = len(report_data) if isinstance(report_data, dict) else 0  # Adjust based on report
+        # Execute tests using the framework
+        framework = SelfHealingFramework(result)
+        framework.start_browser()
+        try:
+            framework.execute_all_steps(delay=0.0)
+            report = framework.report()
 
-        # Save metrics to the Metrics model
-        Metrics.objects.create(
-            execution=execution,
-            number_of_scenarios=number_of_scenarios,
-            number_of_healed_elements=number_of_healed_elements
-        )
+            # Parse the report
+            report_data = json.loads(report) if isinstance(report, str) else report
 
-        return Response({"message": report, "success": True})
-    finally:
-        framework.close()
-        
+            number_of_healed_elements = 0
+            if isinstance(report_data, dict) and "message" not in report_data:
+                # Healing occurred; store each healed element
+                for old_id, details in report_data.items():
+                    HealedElements.objects.create(
+                        execution=execution,
+                        past_element_attribute=old_id,
+                        new_element_attribute=details['new_strategies']['id'],
+                        label=True  # Indicates healing was successful
+                    )
+                number_of_healed_elements = len(report_data)
+
+            # Number of scenarios is the number of rows in the mapping file
+            number_of_scenarios = sum(1 for row in result if row["Step"].strip().startswith("When"))
+            # Store metrics
+            Metrics.objects.create(
+                execution=execution,
+                number_of_scenarios=number_of_scenarios,
+                number_of_healed_elements=number_of_healed_elements
+            )
+
+            return Response({"message": report, "success": True}, status=200)
+        finally:
+            framework.close()
+    except Scenarios.DoesNotExist:
+        return Response({"error": "Scenarios not found for this project"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e), "success": False}, status=500)
         
 @api_view(['GET'])
 def get_metrics(request, project_id):
     metrics = Metrics.objects.filter(execution__project_id=project_id)
     serializer = MetricsSerializer(metrics, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def get_project_metrics(request, project_id):
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Project not found"}, status=404)
+
+    # Fetch executions and related data
+    executions = Execution.objects.filter(project=project)
+    metrics = Metrics.objects.filter(execution__in=executions).select_related('execution')
+    healed_elements = HealedElements.objects.filter(execution__in=executions).select_related('execution')
+
+    # Calculate totals
+    total_scenarios = metrics.aggregate(total=Sum('number_of_scenarios'))['total'] or 0
+    total_healed_elements = metrics.aggregate(total=Sum('number_of_healed_elements'))['total'] or 0
+
+    # Serialize data
+    data = {
+        'total_scenarios': total_scenarios,
+        'total_healed_elements': total_healed_elements,
+        'execution_data': metrics,
+        'healed_elements': healed_elements
+    }
+    serializer = ProjectMetricsSerializer(data)
+    return Response(serializer.data, status=200)

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Project,Scenarios,Metrics
+from .models import Project,Scenarios,Metrics,HealedElements
 
 User = get_user_model()
 
@@ -45,3 +45,28 @@ class MetricsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Metrics
         fields = ['metrics_id', 'execution', 'number_of_scenarios', 'number_of_healed_elements', 'created_at']
+        
+        
+class HealedElementsSerializer(serializers.ModelSerializer):
+    execution_name = serializers.CharField(source='execution.execution_name')
+    past_id = serializers.CharField(source='past_element_attribute')
+    new_id = serializers.CharField(source='new_element_attribute')
+
+    class Meta:
+        model = HealedElements
+        fields = ['execution_name', 'past_id', 'new_id', 'created_at']
+
+class MetricsSerializer(serializers.ModelSerializer):
+    execution_id = serializers.IntegerField(source='execution.execution_id')
+    execution_name = serializers.CharField(source='execution.execution_name')
+    created_at = serializers.DateTimeField(source='execution.created_at')
+
+    class Meta:
+        model = Metrics
+        fields = ['execution_id', 'execution_name', 'number_of_scenarios', 'number_of_healed_elements', 'created_at']
+
+class ProjectMetricsSerializer(serializers.Serializer):
+    total_scenarios = serializers.IntegerField()
+    total_healed_elements = serializers.IntegerField()
+    execution_data = MetricsSerializer(many=True)
+    healed_elements = HealedElementsSerializer(many=True)
