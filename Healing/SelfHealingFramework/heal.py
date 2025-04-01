@@ -109,16 +109,18 @@ class MappingLoader:
         df = pd.read_csv(self.file_path)
         mappings = {}
         for _, row in df.iterrows():
-            bdd_step = row['BDD Step'].strip()
-            element_id = row['element_id'].strip()
-            css = row['css'].strip()
-            xpath = row['xpath'].strip()
-            full_xpath = row['full_xpath'].strip()
+            bdd_step = row['Step'].strip()
+            element_id = str(row['ID']).strip()
+            css = str(row['CSS Selector']).strip()
+            xpath = row['XPath (Absolute)'].strip()
+            full_xpath = row['XPath (Absolute)'].strip()
+            link = row['Page'].strip()
             mappings[bdd_step] = {
-                'element_id': element_id,
-                'css': css,
-                'xpath': xpath,
-                'full_xpath': full_xpath,
+                'ID': element_id,
+                'CSS Selector': css,
+                'XPath (Absolute)': xpath,
+                'XPath (Absolute)': full_xpath,
+                'Page': link,
                 'locator_strategies': self._generate_locator_strategies(element_id, css, xpath, full_xpath)
             }
         return mappings
@@ -185,6 +187,10 @@ class SelfHealingFramework:
     def execute_all_steps(self, delay=1.5):
         """Automatically execute all BDD steps from the CSV."""
         for bdd_step, element_info in self.mappings.items():
+            current_url = self.driver.current_url
+            if current_url != element_info['Page']:
+                self.driver.get(element_info['Page'])
+                time.sleep(delay)
             action, value = self._determine_action(bdd_step)
             self.logger.info(f"Executing step: {bdd_step} - Action: {action}, Value: {value}")
             try:
@@ -407,7 +413,7 @@ def main():
     framework = SelfHealingFramework('./mapping.csv')
     framework.start_browser()
     try:
-        framework.driver.get("http://127.0.0.1:5500/login.html")
+        # framework.driver.get("http://127.0.0.1:5500/login.html")
         framework.execute_all_steps(delay=2.0)
         framework.save_report("reports.json")
     finally:
