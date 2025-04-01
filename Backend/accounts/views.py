@@ -241,6 +241,7 @@ def execute_tests(request):
     # Get the scenario and execute tests
     scenarios = Scenarios.objects.get(project_id=project_id)
     mapping = scenarios.mapping_file
+    print("Mapping Data:", mapping)
     header = mapping[0]
     result = [dict(zip(header, row)) for row in mapping[1:]]
     framework = SelfHealingFramework(result)
@@ -253,7 +254,8 @@ def execute_tests(request):
         # Parse the report to extract metrics
         # Assuming report is a JSON string; adjust based on actual report structure
         report_data = json.loads(report) if isinstance(report, str) else report
-        number_of_scenarios = len(result)  # Example: number of scenario rows in mapping
+        # Extract scenarios correctly
+        number_of_scenarios = sum(1 for row in result if row["Step"].strip().startswith("When"))
         number_of_healed_elements = len(report_data) if isinstance(report_data, dict) else 0  # Adjust based on report
 
         # Save metrics to the Metrics model
