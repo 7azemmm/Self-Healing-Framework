@@ -21,7 +21,6 @@ const CreateProject = () => {
     }
 
     try {
-
       const token = localStorage.getItem("access_token");
 
       const response = await axios.post(
@@ -60,51 +59,135 @@ const CreateProject = () => {
   };
 
   return (
-    <Box display="flex" h="100vh" overflow="hidden">
-      <Sidebar />
-      <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
-        <Navbar />
-        <Box flex="1" px={6} py={4} overflowY="auto">
-          <Box
-            bg="white"
-            p={6}
-            borderRadius="md"
-            shadow="sm"
-            h="100%"
-            display="flex"
-            flexDirection="column"
-          >
-            <Text fontSize="xl" fontWeight="bold" mb={4} color="blue.700">
-              Create a New Project
-            </Text>
+    <>
+      {/* Inline CSS for Advanced Styling and Animations */}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
 
-            <VStack spacing={4} align="stretch" flex="1">
-              <Box>
-                <Text fontWeight="medium" mb={1}>
-                  Project Name:
-                </Text>
-                <Input
-                  placeholder="Enter project name"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  size="md"
-                  bg="gray.100"
-                />
-              </Box>
+          @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+          }
 
-              <Button
-                colorScheme="blue"
-                size="lg"
-                onClick={handleCreateProject}
-                alignSelf="flex-start"
+          .fade-in {
+            animation: fadeIn 0.7s ease-out;
+          }
+
+          .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+          }
+
+          .glass-card:hover {
+            transform: translateY(-5px);
+          }
+
+          .input-glow {
+            transition: all 0.3s ease;
+          }
+
+          .input-glow:focus {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transform: scale(1.02);
+          }
+
+          .gradient-text {
+            background: linear-gradient(90deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+
+          .button-glow {
+            transition: all 0.3s ease;
+          }
+
+          .button-glow:hover {
+            box-shadow: 0 0 15px rgba(49, 130, 206, 0.5);
+            transform: scale(1.05);
+          }
+        `}
+      </style>
+
+      <Box display="flex" h="100vh" overflow="hidden">
+        <Sidebar />
+        <Box
+          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
+          flex="1"
+          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Dashboard
+          display="flex"
+          flexDirection="column"
+          overflow="hidden"
+        >
+          <Navbar />
+          <Box flex="1" px={6} py={4} overflowY="auto">
+            <Box
+              className="glass-card fade-in"
+              p={6}
+              borderRadius="lg"
+              h="100%"
+              display="flex"
+              flexDirection="column"
+            >
+              <Text
+                fontSize="2xl"
+                fontWeight="bold"
+                mb={6}
+                color="white"
+                fontFamily="Poppins, sans-serif"
+                className="gradient-text"
               >
-                Create Project
-              </Button>
-            </VStack>
+                Create a New Project
+              </Text>
+
+              <VStack spacing={4} align="stretch" flex="1">
+                <Box>
+                  <Text
+                    fontWeight="medium"
+                    mb={1}
+                    color="white"
+                    fontFamily="Poppins, sans-serif"
+                  >
+                    Project Name:
+                  </Text>
+                  <Input
+                    placeholder="Enter project name"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    size="md"
+                    className="input-glow"
+                    bg="rgba(255, 255, 255, 0.9)"
+                    color="black"
+                    border="1px solid rgba(255, 255, 255, 0.3)"
+                    borderRadius="md"
+                    _focus={{ borderColor: 'white' }}
+                  />
+                </Box>
+
+                <Button
+                  bgGradient="linear(to-r, blue.500, teal.500)"
+                  color="white"
+                  _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
+                  size="lg"
+                  onClick={handleCreateProject}
+                  alignSelf="flex-start"
+                  className="button-glow"
+                >
+                  Create Project
+                </Button>
+              </VStack>
+            </Box>
           </Box>
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 

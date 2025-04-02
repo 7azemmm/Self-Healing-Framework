@@ -91,8 +91,7 @@ const Execute = () => {
             acc[key] = value;
           }
           return acc;
-        }, {});;
-
+        }, {});
         numberOfScenarios = Object.keys(healingReport).length > 0 ? 1 : 0; // Approximate; adjust if backend provides exact count
       } else {
         healingReport = message;
@@ -147,113 +146,214 @@ const Execute = () => {
   };
 
   return (
-    <Box display="flex" h="100vh" overflow="hidden">
-      <Sidebar />
-      <Box flex="1" bg="gray.50" display="flex" flexDirection="column">
-        <Navbar />
-        <Box flex="1" px={6} py={4} overflowY="auto">
-          {/* Page Header */}
-          <Text fontSize="2xl" fontWeight="bold" color="blue.700" mb={4}>
-            Execute Test Scenarios
-          </Text>
+    <>
+      {/* Inline CSS for Advanced Styling and Animations */}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
 
-          {/* Execution Controls */}
-          <VStack align="stretch" mb={8} spacing={4}>
-            <Select
-              placeholder="Select Project to Execute"
-              onChange={(e) => setSelectedProject(e.target.value)}
-              value={selectedProject}
-            >
-              {projects.map((project) => (
-                <option key={project.project_id} value={project.project_id}>
-                  {project.project_name}
-                </option>
-              ))}
-            </Select>
-            <Input
-              placeholder="Enter Execution Name (optional)"
-              value={executionName}
-              onChange={(e) => setExecutionName(e.target.value)}
-            />
-            <Button
-              colorScheme="blue"
-              size="lg"
-              onClick={handleRunTest}
-              isDisabled={isExecuting}
-            >
-              {isExecuting ? "Running..." : "Run Tests"}
-            </Button>
-            <Button
-              colorScheme="red"
-              size="lg"
-              onClick={handleStopExecution}
-              isDisabled={!isExecuting}
-            >
-              Stop Execution
-            </Button>
-          </VStack>
+          @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+          }
 
-          {/* Test Execution Insights */}
-          {!isExecuting && testResults.healingReport && (
-            <Box mb={8}>
-              <Card bg="white" boxShadow="sm" borderRadius="md">
-                <CardHeader>
-                  <Text fontSize="lg" fontWeight="bold" color="blue.500">
-                    Test Execution Insights
-                  </Text>
-                </CardHeader>
-                <CardBody>
-                  {testResults.healingReport.message ? (
-                    <VStack align="start" spacing={2}>
-                      <Text color="green.500" fontSize="md">
-                        {testResults.healingReport.message}
-                      </Text>
-                      <Text fontSize="md">
-                        Number of scenarios executed: {testResults.numberOfScenarios}
-                      </Text>
-                    </VStack>
-                  ) : (
-                    <VStack align="start" spacing={4}>
-                      <Text color="orange.500" fontSize="md">
-                        Tests completed with healing
-                      </Text>
-                      <Text fontSize="md">
-                        Number of scenarios executed: {testResults.numberOfScenarios}
-                      </Text>
-                      <Text fontSize="md">
-                        Number of healed elements: {Object.keys(testResults.healingReport).length}
-                      </Text>
-                      <Table size="sm" variant="simple">
-                        <Thead>
-                          <Tr>
-                            <Th>Element ID</Th>
-                            <Th>Timestamp</Th>
-                            <Th>Original ID</Th>
-                            <Th>New ID</Th>
-                            <Th>Note</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {Object.entries(testResults.healingReport).map(([oldId, details]) => (
-                            <Tr key={oldId}>
-                              <Td>{oldId}</Td>
-                              <Td>{details.timestamp}</Td>
-                              <Td>{details.original_strategies.id}</Td>
-                              <Td>{details.new_strategies.id}</Td>
-                              <Td>{details.note}</Td>
+          .fade-in {
+            animation: fadeIn 0.7s ease-out;
+          }
+
+          .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+          }
+
+          .glass-card:hover {
+            transform: translateY(-5px);
+          }
+
+          .select-glow, .input-glow {
+            transition: all 0.3s ease;
+          }
+
+          .select-glow:focus, .input-glow:focus {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transform: scale(1.02);
+          }
+
+          .gradient-text {
+            background: linear-gradient(90deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+
+          .table-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+          }
+
+          .button-glow {
+            transition: all 0.3s ease;
+          }
+
+          .button-glow:hover {
+            box-shadow: 0 0 15px rgba(49, 130, 206, 0.5);
+            transform: scale(1.05);
+          }
+        `}
+      </style>
+
+      <Box display="flex" h="100vh" overflow="hidden">
+        <Sidebar />
+        <Box
+          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
+          flex="1"
+          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Dashboard
+          display="flex"
+          flexDirection="column"
+          overflow="hidden"
+        >
+          <Navbar />
+          <Box flex="1" px={6} py={4} overflowY="auto">
+            {/* Page Header */}
+            <Text
+              fontSize="2xl"
+              fontWeight="bold"
+              mb={6}
+              color="white"
+              fontFamily="Poppins, sans-serif"
+              className="gradient-text fade-in"
+            >
+              Execute Test Scenarios
+            </Text>
+
+            {/* Execution Controls */}
+            <VStack align="stretch" mb={8} spacing={4} className="fade-in">
+              <Select
+                placeholder="Select Project to Execute"
+                onChange={(e) => setSelectedProject(e.target.value)}
+                value={selectedProject}
+                className="select-glow"
+                bg="rgba(255, 255, 255, 0.9)"
+                color="black"
+                border="1px solid rgba(255, 255, 255, 0.3)"
+                borderRadius="md"
+                _focus={{ borderColor: 'white' }}
+              >
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.project_name}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                placeholder="Enter Execution Name (optional)"
+                value={executionName}
+                onChange={(e) => setExecutionName(e.target.value)}
+                className="input-glow"
+                bg="rgba(255, 255, 255, 0.9)"
+                color="black"
+                border="1px solid rgba(255, 255, 255, 0.3)"
+                borderRadius="md"
+                _focus={{ borderColor: 'white' }}
+              />
+              <Button
+                bgGradient="linear(to-r, blue.500, teal.500)"
+                color="white"
+                _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
+                size="lg"
+                onClick={handleRunTest}
+                isDisabled={isExecuting}
+                className="button-glow"
+              >
+                {isExecuting ? "Running..." : "Run Tests"}
+              </Button>
+              <Button
+                bgGradient="linear(to-r, red.500, red.700)"
+                color="white"
+                _hover={{ bgGradient: "linear(to-r, red.600, red.800)" }}
+                size="lg"
+                onClick={handleStopExecution}
+                isDisabled={!isExecuting}
+                className="button-glow"
+              >
+                Stop Execution
+              </Button>
+            </VStack>
+
+            {/* Test Execution Insights */}
+            {!isExecuting && testResults.healingReport && (
+              <Box mb={8} className="fade-in">
+                <Card className="glass-card" borderRadius="lg">
+                  <CardHeader>
+                    <Text
+                      fontSize="lg"
+                      fontWeight="bold"
+                      color="white"
+                      fontFamily="Poppins, sans-serif"
+                    >
+                      Test Execution Insights
+                    </Text>
+                  </CardHeader>
+                  <CardBody>
+                    {testResults.healingReport.message ? (
+                      <VStack align="start" spacing={2}>
+                        <Text color="blue.200" fontSize="md">
+                          {testResults.healingReport.message}
+                        </Text>
+                        <Text fontSize="md" color="white">
+                          Number of scenarios executed: {testResults.numberOfScenarios}
+                        </Text>
+                      </VStack>
+                    ) : (
+                      <VStack align="start" spacing={4}>
+                        <Text color="blue.200" fontSize="md">
+                          Tests completed with healing
+                        </Text>
+                        <Text fontSize="md" color="white">
+                          Number of scenarios executed: {testResults.numberOfScenarios}
+                        </Text>
+                        <Text fontSize="md" color="white">
+                          Number of healed elements: {Object.keys(testResults.healingReport).length}
+                        </Text>
+                        <Table size="sm">
+                          <Thead>
+                            <Tr>
+                              <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Element ID</Th>
+                              <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Timestamp</Th>
+                              <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Original ID</Th>
+                              <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">New ID</Th>
+                              <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Note</Th>
                             </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </VStack>
-                  )}
-                </CardBody>
-              </Card>
-            </Box>
-          )}
+                          </Thead>
+                          <Tbody>
+                            {Object.entries(testResults.healingReport).map(([oldId, details]) => (
+                              <Tr key={oldId} className="table-row">
+                                <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{oldId}</Td>
+                                <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{details.timestamp}</Td>
+                                <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{details.original_strategies.id}</Td>
+                                <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{details.new_strategies.id}</Td>
+                                <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{details.note}</Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </VStack>
+                    )}
+                  </CardBody>
+                </Card>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 
