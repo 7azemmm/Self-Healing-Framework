@@ -68,35 +68,43 @@ def documents(request):
     bdd_files = []
     test_script_files = {}
 
+    # Process uploaded files
     for key in request.FILES:
         if key.startswith('bdd_'):
             bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
         elif key.startswith('test_script_'):
             test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
 
+    # Process BDD and test script files
     outputs = processor.process_all_features(bdd_files, test_script_files)
 
-   
-    scenario_obj, created = Scenarios.objects.get_or_create(
-        project_id=project_id,
-        defaults={"mapping_file": []}
-    )
 
-   
-    if not created:
-        existing_mapping = scenario_obj.mapping_file
-        if isinstance(existing_mapping, list):
-            existing_mapping.extend(outputs)  
+    # Save the output to the database
+    for output in outputs:
+        # Use get_or_create to ensure that we don't create duplicate entries
+        scenario_obj,created= Scenarios.objects.get_or_create(
+            project_id=project_id,
+            defaults={"mapping_file": []}
+        )
+
+        # If the scenario already exists, we add the new output without causing issues
+        print("creeeeeeeeeeeeeeeeeeeeeeeeee")
+        print(created)
+        if not created:
+            existing_mapping = scenario_obj.mapping_file
+            if isinstance(existing_mapping, list):
+                existing_mapping.extend(output[1:])  # Append new output to the list
         else:
-            existing_mapping = outputs  
-
+            existing_mapping = output  # Convert to a list if it isn't
         scenario_obj.mapping_file = existing_mapping
-        scenario_obj.save()
-    else:
-        scenario_obj.mapping_file = outputs
+        print(output)
         scenario_obj.save()
 
     return Response("Added Successfully")
+
+
+
+
 
 
 @api_view(['POST'])
@@ -249,7 +257,7 @@ def execute_tests(request):
         framework = SelfHealingFramework(result)
         framework.start_browser()
         try:
-            framework.execute_all_steps(delay=0.0)
+            framework.execute_all_steps(delay=2.0)
             report = framework.report()
 
             # Parse the report

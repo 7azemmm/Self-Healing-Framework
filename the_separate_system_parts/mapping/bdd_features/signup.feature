@@ -6,7 +6,3 @@ Scenario: Successful signup with valid credentials
     And I enter password "password123"
     And I click the signup button
     Then I should see the login
-
-
-
-

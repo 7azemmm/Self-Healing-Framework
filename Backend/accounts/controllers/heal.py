@@ -331,8 +331,8 @@ class SelfHealingFramework:
 
     def close(self):
         """Clean up resources."""
-        if self.driver:
-            self.driver.quit()
+        # if self.driver:
+        #     self.driver.quit()
 
     def _get_all_page_elements(self) -> list:
         """Get all elements from the current page with their attributes, excluding labels and divs."""
