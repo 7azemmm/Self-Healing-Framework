@@ -6,3 +6,4 @@ healing_report.json
 venv/
 *.pyc
 .vscode
+__pycache__/
