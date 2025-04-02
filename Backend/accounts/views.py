@@ -38,6 +38,28 @@ def get_user(self):
     users = User.objects.all() 
     return Response(UserSerializer(users,many=True).data)
 
+# @api_view(['POST'])
+# def documents(request):
+#     data = request.data
+#     processor = MappingProcessor()
+#     project_id = data.get('project_id')
+#     bdd_files = []
+#     test_script_files = {}
+#     for key in request.FILES:
+#         if key.startswith('bdd_'):
+#             bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
+#         elif key.startswith('test_script_'):
+#             test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
+            
+        
+#     outputs = processor.process_all_features(bdd_files,test_script_files)
+#     for output in outputs:
+#         Scenarios.objects.create(
+#                 project_id=project_id, 
+#                 mapping_file=output
+#             )
+#     return Response("Added Successfully")
+
 @api_view(['POST'])
 def documents(request):
     data = request.data
@@ -45,20 +67,37 @@ def documents(request):
     project_id = data.get('project_id')
     bdd_files = []
     test_script_files = {}
+
     for key in request.FILES:
         if key.startswith('bdd_'):
             bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
         elif key.startswith('test_script_'):
             test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
-            
-        
-    outputs = processor.process_all_features(bdd_files,test_script_files)
-    for output in outputs:
-        Scenarios.objects.create(
-                project_id=project_id, 
-                mapping_file=output
-            )
+
+    outputs = processor.process_all_features(bdd_files, test_script_files)
+
+   
+    scenario_obj, created = Scenarios.objects.get_or_create(
+        project_id=project_id,
+        defaults={"mapping_file": []}
+    )
+
+   
+    if not created:
+        existing_mapping = scenario_obj.mapping_file
+        if isinstance(existing_mapping, list):
+            existing_mapping.extend(outputs)  
+        else:
+            existing_mapping = outputs  
+
+        scenario_obj.mapping_file = existing_mapping
+        scenario_obj.save()
+    else:
+        scenario_obj.mapping_file = outputs
+        scenario_obj.save()
+
     return Response("Added Successfully")
+
 
 @api_view(['POST'])
 def healing(request):
@@ -74,52 +113,6 @@ def healing(request):
         return Response(framework.report())
     finally:
         framework.close()
-
-
-# @api_view(['POST'])
-# def scenario(request):
-#     data = request.data
-#     bdd = data.get('bdd')
-#     links = data.get('links')
-#     print("Starting the script...")
-
-#     print("Processing BDD scenario...")
-#     bdd_scenario = process_bdd(bdd)
-#     print("BDD scenario processed.")
-
-#     print("Processing HTML pages...")
-#     html_pages = process_html(links.split("\n"))
-#     print("HTML pages processed.")
-
-#     print("Performing mapping...")
-#     mappings = map_bdd_to_html(bdd_scenario, html_pages)
-#     print("Mapping completed.")
-
-#     print("Writing results to CSV...")
-#     response = [[
-#         "Step", "Page", "ID", "Class", "Name", "Value",
-#         "XPath (Absolute)", "XPath (Relative)", "CSS Selector"
-#     ]]
-#     for match in mappings:
-#         response.append([
-#             match["step"],
-#             match["page"],
-#             get_attribute_simple(match["element"]["attributes"], "id"),
-#             get_attribute_simple(match["element"]["attributes"], "class"),
-#             get_attribute_simple(match["element"]["attributes"], "name"),
-#             get_attribute_simple(match["element"]["attributes"], "value"),
-#             get_attribute_simple(match["element"]["attributes"], "xpath_absolute"),
-#             get_attribute_simple(match["element"]["attributes"], "xpath_relative"),
-#             get_attribute_simple(match["element"]["attributes"], "css_selector"),
-#         ])
-    
-#     project_id = data.get('project_id')
-#     Scenarios.objects.create(
-#             project_id=project_id, 
-#             mapping_file=response
-#         )
-
-#     return Response("Added Successfully")
 
 
 @api_view(['POST'])

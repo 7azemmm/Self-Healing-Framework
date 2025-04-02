@@ -7,3 +7,6 @@ Scenario: Successful signup with valid credentials
     And I click the signup button
     Then I should see the login
 
+
+
+
