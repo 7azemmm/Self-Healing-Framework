@@ -257,7 +257,7 @@ def execute_tests(request):
         framework = SelfHealingFramework(result)
         framework.start_browser()
         try:
-            framework.execute_all_steps(delay=2.0)
+            framework.execute_all_steps(delay=3.5)
             report = framework.report()
 
             # Parse the report
