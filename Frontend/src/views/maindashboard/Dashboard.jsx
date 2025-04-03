@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Box, 
-  Text, 
-  Flex, 
-  Progress, 
-  Table, 
-  Thead, 
-  Tbody, 
-  Tr, 
-  Th, 
+import {
+  Box,
+  Text,
+  Flex,
+  Progress,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
   Td,
   Select
 } from "@chakra-ui/react";
@@ -74,59 +74,60 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Inline CSS for Advanced Styling and Animations */}
       <style>
         {`
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
 
-          @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-          }
-
-          .fade-in {
-            animation: fadeIn 0.7s ease-out;
+          .dashboard-bg {
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
           }
 
           .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease;
           }
 
           .glass-card:hover {
-            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
           }
 
-          .select-glow {
-            transition: all 0.3s ease;
-          }
-
-          .select-glow:focus {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transform: scale(1.02);
-          }
-
-          .progress-glow {
-            animation: pulseGlow 2s infinite;
+          .stat-card {
+            animation: fadeIn 0.5s ease-out;
           }
 
           .gradient-text {
-            background: linear-gradient(90deg, #ffffff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #1a365d;
+            font-weight: bold;
+          }
+
+          .table-row {
+            transition: background-color 0.2s ease;
           }
 
           .table-row:hover {
-            background: rgba(255, 255, 255, 0.05);
-            transform: scale(1.01);
+            background: #f8fafc;
+          }
+
+          .chart-container {
+            background: white;
+          }
+
+          .select-custom {
             transition: all 0.2s ease;
+          }
+
+          .select-custom:hover {
+            border-color: #3182ce;
+          }
+
+          .progress-bar-animated {
+            background: #edf2f7;
           }
         `}
       </style>
@@ -134,178 +135,191 @@ const Dashboard = () => {
       <Flex h="100vh" overflow="hidden">
         <Sidebar />
         <Box
-          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
+          ml={{ base: "60px", md: "240px" }}
           flex="1"
-          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Sidebar/Navbar
+          className="dashboard-bg"
           display="flex"
           flexDirection="column"
           overflow="hidden"
         >
           <Navbar />
-          <Box flex="1" px={6} py={4} overflowY="auto">
-            {/* Dashboard Title */}
-            <Text
-              fontSize="2xl"
-              fontWeight="bold"
-              mb={6}
-              color="white"
-              fontFamily="Poppins, sans-serif"
-              className="gradient-text"
+          <Box flex="1" px={8} py={6} overflowY="auto">
+            {/* Dashboard Header */}
+            <Flex
+              justify="space-between"
+              align="center"
+              mb={8}
             >
-              Project Dashboard
-            </Text>
-
-            {/* Project Selection */}
-            <Box mb={6} className="fade-in">
               <Text
+                fontSize="2xl"
                 fontWeight="bold"
-                mb={2}
-                fontSize="lg"
-                color="white"
-                fontFamily="Poppins, sans-serif"
+                color="#1a365d"
+                letterSpacing="tight"
               >
-                Select Project
+                Project Dashboard
               </Text>
-              <Select
-                value={selectedProjectId}
-                onChange={(e) => setSelectedProjectId(e.target.value)}
-                placeholder="Choose a project"
-                className="select-glow"
-                bg="rgba(255, 255, 255, 0.9)"
-                color="black"
-                border="1px solid rgba(255, 255, 255, 0.3)"
-                borderRadius="md"
-                _focus={{ borderColor: 'white' }}
-              >
-                {projects.map(project => (
-                  <option key={project.project_id} value={project.project_id}>
-                    {project.project_name}
-                  </option>
-                ))}
-              </Select>
-            </Box>
 
-            {/* Summary Statistics */}
-            <Flex gap={6} mb={8} flexWrap="wrap">
+              {/* Project Selection */}
+              <Box w="300px">
+                <Select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  bg="white"
+                  color="#2d3748"
+                  border="1px solid #e2e8f0"
+                  borderRadius="md"
+                  h="40px"
+                  fontSize="md"
+                  _hover={{
+                    borderColor: "#3182ce",
+                    bg: "white"
+                  }}
+                  _focus={{
+                    borderColor: "#3182ce",
+                    boxShadow: "0 0 0 1px #3182ce"
+                  }}
+                >
+                  {projects.map(project => (
+                    <option key={project.project_id} value={project.project_id}>
+                      {project.project_name}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
+            </Flex>
+
+            {/* Stats Cards */}
+            <Flex gap={6} mb={8}>
               <Box
-                className="glass-card fade-in"
-                p={4}
-                borderRadius="lg"
+                className="glass-card stat-card"
+                p={6}
+                borderRadius="md"
                 flex="1"
-                minW="200px"
               >
                 <Text
-                  fontWeight="bold"
-                  fontSize="lg"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  color="#4a5568"
+                  mb={2}
+                  fontSize="md"
+                  fontWeight="medium"
                 >
-                  Scenarios
+                  Total Scenarios
                 </Text>
-                <Text fontSize="3xl" className="gradient-text" mt={2}>
-                  {totalScenarios}
+                <Text
+                  fontSize="3xl"
+                  color="#2d3748"
+                  fontWeight="bold"
+                >
+                  {totalScenarios.toLocaleString()}
                 </Text>
               </Box>
               <Box
-                className="glass-card fade-in"
-                p={4}
-                borderRadius="lg"
+                className="glass-card stat-card"
+                p={6}
+                borderRadius="md"
                 flex="1"
-                minW="200px"
               >
                 <Text
-                  fontWeight="bold"
-                  fontSize="lg"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  color="#4a5568"
+                  mb={2}
+                  fontSize="md"
+                  fontWeight="medium"
                 >
-                  Healed Elements
+                  Healing Rate
                 </Text>
-                <Text fontSize="3xl" className="gradient-text" mt={2}>
+                <Text
+                  fontSize="3xl"
+                  color="#2d3748"
+                  fontWeight="bold"
+                >
                   {healedPercentage}%
                 </Text>
                 <Progress
                   value={healedPercentage}
-                  size="md"
-                  mt={2}
-                  css={{
+                  size="sm"
+                  mt={4}
+                  borderRadius="full"
+                  bg="#edf2f7"
+                  sx={{
                     '& > div': {
-                      background: 'linear-gradient(to right, #3182ce, #63b3ed)',
+                      background: '#3182ce',
+                      transition: 'width 0.5s ease-out',
                     },
                   }}
-                  className="progress-glow"
-                  borderRadius="md"
                 />
               </Box>
             </Flex>
 
-            {/* Test Execution Graph and Healed Elements Table */}
-            <Flex gap={8} flexWrap="wrap">
+            {/* Charts and Table */}
+            <Flex gap={6} flexWrap={{ base: "wrap", xl: "nowrap" }}>
               <Box
-                flex="1"
-                className="glass-card fade-in"
-                p={4}
-                borderRadius="lg"
-                minW="300px"
+                flex="1.5"
+                className="glass-card"
+                p={6}
+                borderRadius="md"
+                minW={{ base: "100%", xl: "0" }}
               >
                 <Text
-                  fontWeight="bold"
-                  mb={4}
-                  fontSize="lg"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  fontSize="md"
+                  fontWeight="medium"
+                  color="#2d3748"
+                  mb={6}
                 >
-                  Test Execution
+                  Test Execution Trends
                 </Text>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={executionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                    <XAxis dataKey="name" stroke="white" />
-                    <YAxis stroke="white" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="name" stroke="#4a5568" />
+                    <YAxis stroke="#4a5568" />
                     <Tooltip
                       contentStyle={{
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: 'black',
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                        color: '#2d3748',
                       }}
                     />
-                    <Bar dataKey="count" fill="#3182ce" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="count"
+                      fill="#3182ce"
+                      radius={[2, 2, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
+
               <Box
                 flex="1"
-                className="glass-card fade-in"
-                p={4}
-                borderRadius="lg"
-                minW="300px"
+                className="glass-card"
+                p={6}
+                borderRadius="md"
+                minW={{ base: "100%", xl: "0" }}
               >
                 <Text
-                  fontWeight="bold"
-                  mb={4}
-                  fontSize="lg"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  fontSize="md"
+                  fontWeight="medium"
+                  color="#2d3748"
+                  mb={6}
                 >
-                  Healed Elements
+                  Recent Healings
                 </Text>
-                <Table size="sm">
+                <Table variant="simple">
                   <Thead>
                     <Tr>
-                      <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Execution Name</Th>
-                      <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Past ID</Th>
-                      <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">New ID</Th>
-                      <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Date</Th>
+                      <Th color="#4a5568" borderColor="#e2e8f0">Execution</Th>
+                      <Th color="#4a5568" borderColor="#e2e8f0">Past ID</Th>
+                      <Th color="#4a5568" borderColor="#e2e8f0">New ID</Th>
+                      <Th color="#4a5568" borderColor="#e2e8f0">Date</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
                     {healedElements.map((element, index) => (
                       <Tr key={index} className="table-row">
-                        <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{element.name}</Td>
-                        <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{element.pastId}</Td>
-                        <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{element.newId}</Td>
-                        <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{element.date}</Td>
+                        <Td color="#2d3748" borderColor="#e2e8f0">{element.name}</Td>
+                        <Td color="#2d3748" borderColor="#e2e8f0">{element.pastId}</Td>
+                        <Td color="#2d3748" borderColor="#e2e8f0">{element.newId}</Td>
+                        <Td color="#2d3748" borderColor="#e2e8f0">{element.date}</Td>
                       </Tr>
                     ))}
                   </Tbody>

@@ -1,4 +1,20 @@
-import { Box, VStack, Text, Input, Button, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  Text,
+  Input,
+  Button,
+  useToast,
+  Card,
+  CardHeader,
+  CardBody,
+  Icon,
+  FormControl,
+  FormLabel,
+  InputGroup,
+  InputLeftElement,
+} from "@chakra-ui/react";
+import { FiFolder, FiPlus } from "react-icons/fi";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState } from "react";
@@ -22,7 +38,6 @@ const CreateProject = () => {
 
     try {
       const token = localStorage.getItem("access_token");
-
       const response = await axios.post(
         "/create_project/",
         {
@@ -35,7 +50,6 @@ const CreateProject = () => {
         }
       );
 
-      // Success message
       toast({
         title: "Project Created",
         description: `Project '${response.data.project.name}' created successfully.`,
@@ -44,10 +58,8 @@ const CreateProject = () => {
         isClosable: true,
       });
 
-      // Clear the input field
       setProjectName("");
     } catch (error) {
-      // Error handling
       toast({
         title: "Error Creating Project",
         description: error.response?.data?.error || "An unknown error occurred.",
@@ -59,135 +71,168 @@ const CreateProject = () => {
   };
 
   return (
-    <>
-      {/* Inline CSS for Advanced Styling and Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-
-          @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-          }
-
-          .fade-in {
-            animation: fadeIn 0.7s ease-out;
-          }
-
-          .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-          }
-
-          .glass-card:hover {
-            transform: translateY(-5px);
-          }
-
-          .input-glow {
-            transition: all 0.3s ease;
-          }
-
-          .input-glow:focus {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transform: scale(1.02);
-          }
-
-          .gradient-text {
-            background: linear-gradient(90deg, #ffffff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-
-          .button-glow {
-            transition: all 0.3s ease;
-          }
-
-          .button-glow:hover {
-            box-shadow: 0 0 15px rgba(49, 130, 206, 0.5);
-            transform: scale(1.05);
-          }
-        `}
-      </style>
-
-      <Box display="flex" h="100vh" overflow="hidden">
-        <Sidebar />
+    <Box display="flex" h="100vh" overflow="hidden">
+      <Sidebar />
+      <Box
+        ml={{ base: "60px", md: "240px" }}
+        flex="1"
+        bgGradient="linear(to-br, gray.50, blue.50)"
+        display="flex"
+        flexDirection="column"
+        overflow="hidden"
+      >
+        <Navbar />
         <Box
-          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
           flex="1"
-          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Dashboard
+          px={8}
+          py={6}
+          overflowY="auto"
           display="flex"
           flexDirection="column"
-          overflow="hidden"
+          alignItems="center"
         >
-          <Navbar />
-          <Box flex="1" px={6} py={4} overflowY="auto">
-            <Box
-              className="glass-card fade-in"
-              p={6}
-              borderRadius="lg"
-              h="100%"
-              display="flex"
-              flexDirection="column"
+          {/* Page Header - Full Width */}
+          <Box
+            w="full"
+            maxW="4xl"
+            mb={6}
+            p={4}
+            bg="white"
+            borderRadius="lg"
+            boxShadow="sm"
+            border="1px solid"
+            borderColor="gray.100"
+          >
+            <Text
+              fontSize="2xl"
+              fontWeight="bold"
+              bgGradient="linear(to-r, blue.600, blue.800)"
+              bgClip="text"
+              letterSpacing="tight"
+            >
+              Create Project
+            </Text>
+          </Box>
+
+          {/* Card - Full Width */}
+          <Card
+            w="full"
+            maxW="4xl"
+            bg="white"
+            shadow="md"
+            border="1px solid"
+            borderColor="gray.200"
+            borderRadius="xl"
+            overflow="hidden"
+          >
+            <CardHeader
+              borderBottom="1px solid"
+              borderColor="gray.200"
+              bgGradient="linear(to-r, blue.50, blue.100)"
+              py={6}
             >
               <Text
-                fontSize="2xl"
-                fontWeight="bold"
-                mb={6}
-                color="white"
-                fontFamily="Poppins, sans-serif"
-                className="gradient-text"
+                fontSize="lg"
+                fontWeight="semibold"
+                color="blue.800"
+                display="flex"
+                alignItems="center"
+                gap={2}
               >
-                Create a New Project
+                <Icon as={FiFolder} />
+                Project Details
               </Text>
-
-              <VStack spacing={4} align="stretch" flex="1">
-                <Box>
-                  <Text
+            </CardHeader>
+            <CardBody
+              py={10}
+              px={8}
+              bg="white"
+            >
+              <VStack spacing={8} align="stretch" maxW="3xl" mx="auto">
+                <FormControl>
+                  <FormLabel
+                    fontSize="sm"
                     fontWeight="medium"
-                    mb={1}
-                    color="white"
-                    fontFamily="Poppins, sans-serif"
+                    color="gray.700"
+                    display="flex"
+                    alignItems="center"
+                    gap={2}
+                    mb={3}
                   >
-                    Project Name:
-                  </Text>
-                  <Input
-                    placeholder="Enter project name"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    size="md"
-                    className="input-glow"
-                    bg="rgba(255, 255, 255, 0.9)"
-                    color="black"
-                    border="1px solid rgba(255, 255, 255, 0.3)"
-                    borderRadius="md"
-                    _focus={{ borderColor: 'white' }}
-                  />
-                </Box>
+                    <Icon as={FiFolder} color="blue.500" />
+                    Project Name
+                  </FormLabel>
+                  <InputGroup size="lg">
+                    <InputLeftElement
+                      pointerEvents="none"
+                      color="blue.400"
+                    >
+                      <Icon as={FiFolder} />
+                    </InputLeftElement>
+                    <Input
+                      placeholder="Enter project name"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      pl="40px"
+                      bg="white"
+                      border="2px solid"
+                      borderColor="gray.200"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{
+                        borderColor: "blue.500",
+                        boxShadow: "0 0 0 1px #3182ce"
+                      }}
+                      fontSize="md"
+                    />
+                  </InputGroup>
+                </FormControl>
 
                 <Button
-                  bgGradient="linear(to-r, blue.500, teal.500)"
+                  leftIcon={<Icon as={FiPlus} />}
+                  bgGradient="linear(to-r, blue.500, blue.600)"
                   color="white"
-                  _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
                   size="lg"
                   onClick={handleCreateProject}
-                  alignSelf="flex-start"
-                  className="button-glow"
+                  transition="all 0.2s"
+                  _hover={{
+                    bgGradient: "linear(to-r, blue.600, blue.700)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "lg"
+                  }}
+                  height="56px"
+                  fontSize="md"
                 >
                   Create Project
                 </Button>
               </VStack>
-            </Box>
+            </CardBody>
+          </Card>
+
+          {/* Helper Text - Full Width */}
+          <Box
+            w="full"
+            maxW="4xl"
+            mt={6}
+            p={4}
+            bg="blue.50"
+            borderRadius="lg"
+            border="1px solid"
+            borderColor="blue.100"
+          >
+            <Text
+              color="blue.800"
+              fontSize="sm"
+              display="flex"
+              alignItems="center"
+              gap={2}
+            >
+              <Icon as={FiFolder} color="blue.500" />
+              Create a new project to organize your test scenarios and executions.
+            </Text>
           </Box>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 };
 

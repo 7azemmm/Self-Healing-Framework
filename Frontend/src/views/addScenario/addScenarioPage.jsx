@@ -1,4 +1,18 @@
-import { Box, Button, Input, Text, Textarea, VStack, useToast, Select } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  Text,
+  Textarea,
+  VStack,
+  useToast,
+  Select,
+  Card,
+  CardHeader,
+  CardBody,
+  Icon,
+} from "@chakra-ui/react";
+import { FiFileText, FiLink, FiPlay } from "react-icons/fi";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
@@ -78,114 +92,68 @@ const AddScenario = () => {
   };
 
   return (
-    <>
-      {/* Inline CSS for Advanced Styling and Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
+    <Box display="flex" h="100vh" overflow="hidden">
+      <Sidebar />
+      <Box
+        ml={{ base: "60px", md: "240px" }}
+        flex="1"
+        bg="gray.50"
+        display="flex"
+        flexDirection="column"
+        overflow="hidden"
+      >
+        <Navbar />
+        <Box flex="1" px={8} py={6} overflowY="auto">
+          {/* Page Header */}
+          <Text
+            fontSize="2xl"
+            fontWeight="bold"
+            color="#2d3748"
+            letterSpacing="tight"
+            mb={6}
+          >
+            Add New Scenario
+          </Text>
 
-          @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-          }
-
-          .fade-in {
-            animation: fadeIn 0.7s ease-out;
-          }
-
-          .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-          }
-
-          .glass-card:hover {
-            transform: translateY(-5px);
-          }
-
-          .select-glow, .textarea-glow {
-            transition: all 0.3s ease;
-          }
-
-          .select-glow:focus, .textarea-glow:focus {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transform: scale(1.02);
-          }
-
-          .gradient-text {
-            background: linear-gradient(90deg, #ffffff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-
-          .button-glow {
-            transition: all 0.3s ease;
-          }
-
-          .button-glow:hover {
-            box-shadow: 0 0 15px rgba(49, 130, 206, 0.5);
-            transform: scale(1.05);
-          }
-        `}
-      </style>
-
-      <Box display="flex" h="100vh" overflow="hidden">
-        <Sidebar />
-        <Box
-          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
-          flex="1"
-          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Dashboard
-          display="flex"
-          flexDirection="column"
-          overflow="hidden"
-        >
-          <Navbar />
-          <Box flex="1" px={6} py={4} overflowY="auto">
-            <Box
-              className="glass-card fade-in"
-              p={6}
-              borderRadius="lg"
-              h="100%"
-              display="flex"
-              flexDirection="column"
-            >
+          <Card
+            bg="white"
+            shadow="sm"
+            border="1px solid"
+            borderColor="gray.200"
+            borderRadius="lg"
+          >
+            <CardHeader>
               <Text
-                fontSize="2xl"
-                fontWeight="bold"
-                mb={6}
-                color="white"
-                fontFamily="Poppins, sans-serif"
-                className="gradient-text"
+                fontSize="lg"
+                fontWeight="semibold"
+                color="#2d3748"
               >
-                Add a New Scenario
+                Scenario Configuration
               </Text>
-
-              <VStack spacing={6} align="stretch" flex="1">
+            </CardHeader>
+            <CardBody>
+              <VStack spacing={6} align="stretch">
                 <Box>
                   <Text
+                    fontSize="sm"
                     fontWeight="medium"
-                    mb={1}
-                    color="white"
-                    fontFamily="Poppins, sans-serif"
+                    color="#4A5568"
+                    mb={2}
                   >
-                    Select Project:
+                    Select Project
                   </Text>
                   <Select
-                    placeholder="Select project..."
+                    placeholder="Choose a project..."
                     value={selectedProject}
                     onChange={(e) => setSelectedProject(e.target.value)}
-                    className="select-glow"
-                    bg="rgba(255, 255, 255, 0.9)"
-                    color="black"
-                    border="1px solid rgba(255, 255, 255, 0.3)"
-                    borderRadius="md"
-                    _focus={{ borderColor: 'white' }}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{ borderColor: "blue.500" }}
+                    _focus={{
+                      borderColor: "blue.500",
+                      boxShadow: "0 0 0 1px #3182ce"
+                    }}
                   >
                     {projects.map((project) => (
                       <option key={project.project_id} value={project.project_id}>
@@ -197,70 +165,85 @@ const AddScenario = () => {
 
                 <Box>
                   <Text
+                    fontSize="sm"
                     fontWeight="medium"
-                    mb={1}
-                    color="white"
-                    fontFamily="Poppins, sans-serif"
+                    color="#4A5568"
+                    mb={2}
+                    display="flex"
+                    alignItems="center"
+                    gap={2}
                   >
-                    BDD Scenario:
+                    <Icon as={FiFileText} />
+                    BDD Scenario
                   </Text>
                   <Textarea
-                    placeholder="Enter your scenario here..."
+                    placeholder="Enter your BDD scenario here..."
                     value={scenario}
                     onChange={(e) => setScenario(e.target.value)}
-                    size="md"
-                    className="textarea-glow"
-                    bg="rgba(255, 255, 255, 0.9)"
-                    color="black"
-                    border="1px solid rgba(255, 255, 255, 0.3)"
-                    borderRadius="md"
-                    _focus={{ borderColor: 'white' }}
-                    minH="150px"
+                    minH="200px"
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{ borderColor: "blue.500" }}
+                    _focus={{
+                      borderColor: "blue.500",
+                      boxShadow: "0 0 0 1px #3182ce"
+                    }}
+                    fontSize="sm"
+                    fontFamily="mono"
                   />
                 </Box>
 
                 <Box>
                   <Text
+                    fontSize="sm"
                     fontWeight="medium"
-                    mb={1}
-                    color="white"
-                    fontFamily="Poppins, sans-serif"
+                    color="#4A5568"
+                    mb={2}
+                    display="flex"
+                    alignItems="center"
+                    gap={2}
                   >
-                    HTML Page URLs:
+                    <Icon as={FiLink} />
+                    HTML Page URLs
                   </Text>
                   <Textarea
                     placeholder="Enter URLs (one per line)..."
                     value={urls}
                     onChange={(e) => setUrls(e.target.value)}
-                    size="md"
-                    className="textarea-glow"
-                    bg="rgba(255, 255, 255, 0.9)"
-                    color="black"
-                    border="1px solid rgba(255, 255, 255, 0.3)"
-                    borderRadius="md"
-                    _focus={{ borderColor: 'white' }}
                     minH="150px"
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{ borderColor: "blue.500" }}
+                    _focus={{
+                      borderColor: "blue.500",
+                      boxShadow: "0 0 0 1px #3182ce"
+                    }}
+                    fontSize="sm"
+                    fontFamily="mono"
                   />
                 </Box>
 
-                <Box display="flex" justifyContent="center" mt={4}>
-                  <Button
-                    bgGradient="linear(to-r, blue.500, teal.500)"
-                    color="white"
-                    _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
-                    size="lg"
-                    onClick={handleStartMapping}
-                    className="button-glow"
-                  >
-                    Start Mapping
-                  </Button>
-                </Box>
+                <Button
+                  leftIcon={<Icon as={FiPlay} />}
+                  colorScheme="blue"
+                  size="lg"
+                  onClick={handleStartMapping}
+                  transition="all 0.2s"
+                  _hover={{
+                    transform: "translateY(-2px)",
+                    boxShadow: "sm"
+                  }}
+                >
+                  Start Mapping
+                </Button>
               </VStack>
-            </Box>
-          </Box>
+            </CardBody>
+          </Card>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 };
 

@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardBody,
 } from "@chakra-ui/react";
-import { FaUpload, FaTrash, FaEye } from "react-icons/fa";
+import { FaUpload, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
@@ -143,89 +143,64 @@ const Documents = () => {
 
   return (
     <>
-      {/* Inline CSS for Advanced Styling and Animations */}
       <style>
         {`
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
 
-          @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+          .dashboard-bg {
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
           }
 
-          .fade-in {
-            animation: fadeIn 0.7s ease-out;
-          }
-
-          .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-          }
-
-          .glass-card:hover {
-            transform: translateY(-5px);
-          }
-
-          .select-glow {
-            transition: all 0.3s ease;
-          }
-
-          .select-glow:focus {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transform: scale(1.02);
-          }
-
-          .file-input-wrapper {
-            position: relative;
-            padding: 10px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-            cursor: pointer;
-          }
-
-          .file-input-wrapper:hover {
-            border-color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.1);
-          }
-
-          .file-input-wrapper input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-          }
-
-          .gradient-text {
-            background: linear-gradient(90deg, #ffffff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-
-          .table-row:hover {
-            background: rgba(255, 255, 255, 0.05);
-            transform: scale(1.01);
+          .content-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
           }
 
-          .button-glow {
-            transition: all 0.3s ease;
+          .content-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
           }
 
-          .button-glow:hover {
-            box-shadow: 0 0 15px rgba(49, 130, 206, 0.5);
-            transform: scale(1.05);
+          .file-upload-area {
+            border: 2px dashed #e2e8f0;
+            background: #f8fafc;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            padding: 20px;
+            border-radius: 8px;
+          }
+
+          .file-upload-area:hover {
+            border-color: #3182ce;
+            background: #f1f5f9;
+          }
+
+          .upload-button {
+            transition: all 0.2s ease;
+          }
+
+          .upload-button:hover {
+            transform: translateY(-2px);
+          }
+
+          .table-row {
+            transition: background-color 0.2s ease;
+          }
+
+          .table-row:hover {
+            background: #f8fafc;
+          }
+
+          .action-button {
+            transition: all 0.2s ease;
+          }
+
+          .action-button:hover {
+            transform: translateY(-1px);
           }
         `}
       </style>
@@ -233,56 +208,50 @@ const Documents = () => {
       <Box display="flex" h="100vh" overflow="hidden">
         <Sidebar />
         <Box
-          ml={{ base: "60px", md: "20%" }} // Matches Sidebar width
+          ml={{ base: "60px", md: "240px" }}
           flex="1"
-          bgGradient="linear(to-br, blue.900, teal.700)" // Consistent with Dashboard
+          className="dashboard-bg"
           display="flex"
           flexDirection="column"
           overflow="hidden"
         >
           <Navbar />
-          <Box flex="1" px={6} py={4} overflowY="auto">
+          <Box flex="1" px={8} py={6} overflowY="auto">
             {/* Page Header */}
             <Text
               fontSize="2xl"
               fontWeight="bold"
               mb={6}
-              color="white"
-              fontFamily="Poppins, sans-serif"
-              className="gradient-text fade-in"
+              color="#1a365d"
+              letterSpacing="tight"
             >
-              Documents
+              Document Management
             </Text>
 
             {/* Upload Section */}
-            <Card
-              className="glass-card fade-in"
-              borderRadius="lg"
-              mb={6}
-            >
+            <Card className="content-card" mb={6}>
               <CardHeader>
                 <Text
                   fontSize="lg"
-                  fontWeight="bold"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  fontWeight="semibold"
+                  color="#2d3748"
                 >
                   Upload Documents
                 </Text>
               </CardHeader>
               <CardBody>
-                <VStack spacing={4} align="stretch">
-                  {/* Dropdown to select project */}
+                <VStack spacing={5} align="stretch">
                   <Select
                     placeholder="Select Project"
                     onChange={(e) => setSelectedProject(e.target.value)}
                     value={selectedProject}
-                    className="select-glow"
-                    bg="rgba(255, 255, 255, 0.9)"
-                    color="black"
-                    border="1px solid rgba(255, 255, 255, 0.3)"
-                    borderRadius="md"
-                    _focus={{ borderColor: 'white' }}
+                    bg="white"
+                    border="1px solid #e2e8f0"
+                    _hover={{ borderColor: "#3182ce" }}
+                    _focus={{
+                      borderColor: "#3182ce",
+                      boxShadow: "0 0 0 1px #3182ce"
+                    }}
                   >
                     {projects.map((project) => (
                       <option key={project.project_id} value={project.project_id}>
@@ -291,61 +260,71 @@ const Documents = () => {
                     ))}
                   </Select>
 
-                  {/* BDD Files Input */}
+                  {/* BDD Files Upload */}
                   <Box>
-                    <Text
-                      fontWeight="medium"
-                      mb={1}
-                      color="white"
-                      fontFamily="Poppins, sans-serif"
-                    >
-                      BDD Files:
+                    <Text color="#4a5568" mb={2} fontWeight="medium">
+                      BDD Files
                     </Text>
-                    <Box className="file-input-wrapper">
-                      <Text color="white" fontSize="sm">
-                        {bddFiles.length > 0
-                          ? `${bddFiles.length} file(s) selected`
-                          : "Click to upload .feature files"}
-                      </Text>
-                      <Input
-                        type="file"
-                        accept=".feature"
-                        onChange={(e) => setBddFiles(Array.from(e.target.files))}
-                        multiple
-                      />
+                    <Box className="file-upload-area">
+                      <VStack spacing={2} align="center">
+                        <FaFileUpload size={24} color="#3182ce" />
+                        <Text color="#4a5568" fontSize="sm">
+                          {bddFiles.length > 0
+                            ? `${bddFiles.length} file(s) selected`
+                            : "Drop .feature files here or click to browse"}
+                        </Text>
+                        <Input
+                          type="file"
+                          accept=".feature"
+                          onChange={(e) => setBddFiles(Array.from(e.target.files))}
+                          multiple
+                          opacity={0}
+                          position="absolute"
+                          top={0}
+                          left={0}
+                          width="100%"
+                          height="100%"
+                          cursor="pointer"
+                        />
+                      </VStack>
                     </Box>
                     {bddFiles.length > 0 && (
-                      <Text fontSize="sm" color="blue.200" mt={1}>
+                      <Text fontSize="sm" color="#3182ce" mt={2}>
                         {bddFiles.map(file => file.name).join(", ")}
                       </Text>
                     )}
                   </Box>
 
-                  {/* Test Script Files Input */}
+                  {/* Test Script Files Upload */}
                   <Box>
-                    <Text
-                      fontWeight="medium"
-                      mb={1}
-                      color="white"
-                      fontFamily="Poppins, sans-serif"
-                    >
-                      Test Script Files:
+                    <Text color="#4a5568" mb={2} fontWeight="medium">
+                      Test Script Files
                     </Text>
-                    <Box className="file-input-wrapper">
-                      <Text color="white" fontSize="sm">
-                        {testScriptFiles.length > 0
-                          ? `${testScriptFiles.length} file(s) selected`
-                          : "Click to upload .java or .py files"}
-                      </Text>
-                      <Input
-                        type="file"
-                        accept=".java,.py"
-                        onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
-                        multiple
-                      />
+                    <Box className="file-upload-area">
+                      <VStack spacing={2} align="center">
+                        <FaFileUpload size={24} color="#3182ce" />
+                        <Text color="#4a5568" fontSize="sm">
+                          {testScriptFiles.length > 0
+                            ? `${testScriptFiles.length} file(s) selected`
+                            : "Drop .java or .py files here or click to browse"}
+                        </Text>
+                        <Input
+                          type="file"
+                          accept=".java,.py"
+                          onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
+                          multiple
+                          opacity={0}
+                          position="absolute"
+                          top={0}
+                          left={0}
+                          width="100%"
+                          height="100%"
+                          cursor="pointer"
+                        />
+                      </VStack>
                     </Box>
                     {testScriptFiles.length > 0 && (
-                      <Text fontSize="sm" color="blue.200" mt={1}>
+                      <Text fontSize="sm" color="#3182ce" mt={2}>
                         {testScriptFiles.map(file => file.name).join(", ")}
                       </Text>
                     )}
@@ -353,79 +332,73 @@ const Documents = () => {
 
                   <Button
                     leftIcon={<FaUpload />}
-                    bgGradient="linear(to-r, blue.500, teal.500)"
-                    color="white"
-                    _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
-                    className="button-glow"
+                    colorScheme="blue"
+                    className="upload-button"
                     onClick={handleUpload}
+                    size="lg"
+                    width="full"
                   >
-                    Upload
+                    Upload Files
                   </Button>
-                  <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
-                    Supported formats: BDD (.feature), Java (.java), Python (.py).
-                  </Text>
                 </VStack>
               </CardBody>
             </Card>
 
             {/* Uploaded Files Table */}
-            <Card className="glass-card fade-in" borderRadius="lg">
+            <Card className="content-card">
               <CardHeader>
                 <Text
                   fontSize="lg"
-                  fontWeight="bold"
-                  color="white"
-                  fontFamily="Poppins, sans-serif"
+                  fontWeight="semibold"
+                  color="#2d3748"
                 >
                   Uploaded Files
                 </Text>
               </CardHeader>
               <CardBody>
                 {uploadedFiles.length === 0 ? (
-                  <Text color="rgba(255, 255, 255, 0.6)" textAlign="center">
-                    No files uploaded yet.
+                  <Text color="#4a5568" textAlign="center" py={8}>
+                    No files have been uploaded yet.
                   </Text>
                 ) : (
-                  <Table size="sm">
+                  <Table variant="simple">
                     <Thead>
                       <Tr>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">File Name</Th>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Size</Th>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Type</Th>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Uploaded At</Th>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Project</Th>
-                        <Th color="white" borderColor="rgba(255, 255, 255, 0.2)">Actions</Th>
+                        <Th color="#4a5568">File Name</Th>
+                        <Th color="#4a5568">Size</Th>
+                        <Th color="#4a5568">Type</Th>
+                        <Th color="#4a5568">Uploaded At</Th>
+                        <Th color="#4a5568">Project</Th>
+                        <Th color="#4a5568">Actions</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       {uploadedFiles.map((file) => (
                         <Tr key={file.id} className="table-row">
-                          <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{file.name}</Td>
-                          <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{file.size}</Td>
-                          <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{file.type}</Td>
-                          <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{file.uploadedAt}</Td>
-                          <Td color="white" borderColor="rgba(255, 255, 255, 0.2)">{file.project}</Td>
-                          <Td borderColor="rgba(255, 255, 255, 0.2)">
+                          <Td color="#2d3748">{file.name}</Td>
+                          <Td color="#2d3748">{file.size}</Td>
+                          <Td color="#2d3748">{file.type}</Td>
+                          <Td color="#2d3748">{file.uploadedAt}</Td>
+                          <Td color="#2d3748">{file.project}</Td>
+                          <Td>
                             <HStack spacing={2}>
                               <IconButton
                                 icon={<FaEye />}
-                                bgGradient="linear(to-r, blue.500, teal.500)"
-                                color="white"
-                                _hover={{ bgGradient: "linear(to-r, blue.600, teal.600)" }}
+                                colorScheme="blue"
+                                variant="ghost"
                                 size="sm"
                                 aria-label="View File"
                                 onClick={() => handleViewFile(file.name)}
-                                className="button-glow"
+                                className="action-button"
                               />
                               <IconButton
                                 icon={<FaTrash />}
-                                bgGradient="linear(to-r, red.500, red.700)"
-                                color="white"
-                                _hover={{ bgGradient: "linear(to-r, red.600, red.800)" }}
+                                colorScheme="red"
+                                variant="ghost"
                                 size="sm"
                                 aria-label="Delete File"
                                 onClick={() => handleDelete(file.id)}
-                                className="button-glow"
+                                className="action-button"
                               />
                             </HStack>
                           </Td>

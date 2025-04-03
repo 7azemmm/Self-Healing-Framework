@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
-import { Box, FormControl, FormLabel, Input, Button, Heading, Text, Link } from '@chakra-ui/react';
-import { login } from '../../services/auth/authService'; // Adjust the import path as needed
-import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  Heading,
+  Text,
+  Link,
+  Icon,
+  Card,
+  CardBody,
+  VStack,
+} from '@chakra-ui/react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { login } from '../../services/auth/authService';
+import { FiMail, FiLock } from 'react-icons/fi';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -20,185 +34,160 @@ const Login = () => {
   };
 
   return (
-    <>
-      {/* Inline CSS for Advanced Styling and Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(-30px) scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-
-          @keyframes pulseGlow {
-            0% {
-              box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-            }
-            50% {
-              box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-            }
-            100% {
-              box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-            }
-          }
-
-          .fade-in {
-            animation: fadeIn 0.7s ease-out;
-          }
-
-          .glass-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-          }
-
-          .glow-button {
-            animation: pulseGlow 2s infinite;
-          }
-
-          .input-glow {
-            transition: all 0.3s ease;
-          }
-
-          .input-glow:focus {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-            transform: scale(1.02);
-          }
-
-          .gradient-text {
-            background: linear-gradient(90deg, #ffffff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-        `}
-      </style>
-
-      {/* Main Component */}
-      <Box
-        minH="100vh"
-        bgGradient="linear(to-br, blue.900, teal.700)" // Darker gradient for depth
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        p={4}
-        position="relative"
+    <Box
+      minH="100vh"
+      bgGradient="linear(to-br, gray.50, blue.50)"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      p={4}
+    >
+      <Card
+        bg="white"
+        shadow="lg"
+        borderRadius="xl"
+        maxW="md"
+        w="full"
         overflow="hidden"
       >
-        {/* Decorative Background Elements */}
-        <Box
-          position="absolute"
-          top="-50px"
-          left="-50px"
-          width="200px"
-          height="200px"
-          bg="rgba(255, 255, 255, 0.1)"
-          borderRadius="50%"
-          zIndex={0}
-        />
-        <Box
-          position="absolute"
-          bottom="-100px"
-          right="-100px"
-          width="300px"
-          height="300px"
-          bg="rgba(255, 255, 255, 0.15)"
-          borderRadius="50%"
-          zIndex={0}
-        />
+        <CardBody p={8}>
+          <VStack spacing={8} align="stretch">
+            <Box textAlign="center">
+              <Heading
+                as="h1"
+                size="xl"
+                mb={2}
+                bgGradient="linear(to-r, blue.600, blue.800)"
+                bgClip="text"
+                letterSpacing="tight"
+                fontWeight="bold"
+              >
+                Welcome Back
+              </Heading>
+              <Text color="gray.500">
+                Sign in to continue to Auto Heal
+              </Text>
+            </Box>
 
-        {/* Login Form Container */}
-        <Box
-          className="fade-in glass-container" // Apply fade-in and glassmorphism
-          p={{ base: 6, md: 10 }}
-          borderRadius="2xl"
-          width={{ base: '90%', md: '100%' }}
-          maxWidth={{ base: '400px', md: '600px' }}
-          zIndex={1}
-        >
-          <Heading
-            as="h2"
-            size="2xl"
-            mb={8}
-            textAlign="center"
-            className="gradient-text" // Gradient text effect
-            fontFamily="Poppins, sans-serif"
-            fontWeight="extrabold"
-          >
-            Welcome Back
-          </Heading>
-          <form onSubmit={handleSubmit}>
-            <FormControl id="email" mb={6}>
-              <FormLabel color="white" fontWeight="medium" fontSize="lg">
-                Email
-              </FormLabel>
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                size="lg"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-glow" // Glow effect on focus
-                _focus={{ borderColor: 'white' }}
-                bg="rgba(255, 255, 255, 0.9)"
-                color="black"
-                border="1px solid rgba(255, 255, 255, 0.3)"
-                borderRadius="md"
-              />
-            </FormControl>
-            <FormControl id="password" mb={8}>
-              <FormLabel color="white" fontWeight="medium" fontSize="lg">
-                Password
-              </FormLabel>
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                size="lg"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-glow" // Glow effect on focus
-                _focus={{ borderColor: 'white' }}
-                bg="rgba(255, 255, 255, 0.9)"
-                color="black"
-                border="1px solid rgba(255, 255, 255, 0.3)"
-                borderRadius="md"
-              />
-            </FormControl>
-            <Button
-              type="submit"
-              colorScheme="blue"
-              width="100%"
-              size="lg"
-              mb={6}
-              className="glow-button" // Pulsing glow effect
-              _hover={{ bg: 'blue.600', transform: 'scale(1.05)' }}
-              transition="all 0.3s ease"
-              fontWeight="bold"
-              borderRadius="md"
+            <form onSubmit={handleSubmit}>
+              <VStack spacing={6}>
+                <FormControl>
+                  <FormLabel
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.700"
+                  >
+                    Email Address
+                  </FormLabel>
+                  <Box position="relative">
+                    <Icon
+                      as={FiMail}
+                      position="absolute"
+                      left={4}
+                      top="50%"
+                      transform="translateY(-50%)"
+                      color="blue.500"
+                      zIndex={2}
+                    />
+                    <Input
+                      type="email"
+                      pl={12}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      size="lg"
+                      bg="white"
+                      border="2px solid"
+                      borderColor="gray.200"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{
+                        borderColor: "blue.500",
+                        boxShadow: "0 0 0 1px #3182ce"
+                      }}
+                    />
+                  </Box>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.700"
+                  >
+                    Password
+                  </FormLabel>
+                  <Box position="relative">
+                    <Icon
+                      as={FiLock}
+                      position="absolute"
+                      left={4}
+                      top="50%"
+                      transform="translateY(-50%)"
+                      color="blue.500"
+                      zIndex={2}
+                    />
+                    <Input
+                      type="password"
+                      pl={12}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      size="lg"
+                      bg="white"
+                      border="2px solid"
+                      borderColor="gray.200"
+                      _hover={{ borderColor: "blue.400" }}
+                      _focus={{
+                        borderColor: "blue.500",
+                        boxShadow: "0 0 0 1px #3182ce"
+                      }}
+                    />
+                  </Box>
+                </FormControl>
+
+                <Button
+                  type="submit"
+                  width="full"
+                  size="lg"
+                  bgGradient="linear(to-r, blue.500, blue.600)"
+                  color="white"
+                  _hover={{
+                    bgGradient: "linear(to-r, blue.600, blue.700)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "lg"
+                  }}
+                  height="56px"
+                  fontSize="md"
+                  transition="all 0.2s"
+                >
+                  Sign In
+                </Button>
+              </VStack>
+            </form>
+
+            <Text
+              textAlign="center"
+              color="gray.600"
+              fontSize="sm"
             >
-              Login
-            </Button>
-          </form>
-          <Text textAlign="center" mt={4} color="white" fontSize="md">
-            Don't have an account?{' '}
-            <Link
-              href="/signup"
-              color="white"
-              fontWeight="bold"
-              _hover={{ color: 'blue.200', textDecoration: 'underline' }}
-              transition="color 0.2s ease"
-            >
-              Sign Up
-            </Link>
-          </Text>
-        </Box>
-      </Box>
-    </>
+              Don't have an account?{' '}
+              <RouterLink to="/signup" style={{ textDecoration: 'none' }}>
+                <Text
+                  as="span"
+                  color="blue.600"
+                  _hover={{
+                    color: 'blue.700'
+                  }}
+                  fontWeight="medium"
+                >
+                  Create Account
+                </Text>
+              </RouterLink>
+            </Text>
+          </VStack>
+        </CardBody>
+      </Card>
+    </Box>
   );
 };
 
