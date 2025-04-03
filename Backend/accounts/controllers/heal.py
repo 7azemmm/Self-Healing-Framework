@@ -116,12 +116,12 @@ class MappingLoader:
             }
         return mappings
 
-    def _generate_locator_strategies(self, element_id, css=None, xpath=None, full_xpath=None):
+    def _generate_locator_strategies(self, element_id, css, xpath, full_xpath):
         """Generate multiple locator strategies for an element."""
         return {
             'id': element_id,
-            'CSS Selector': css or f'#{element_id}',  # Generate CSS from ID if not provided
-            'XPath (Absolute)': xpath or f"//*[@id='{element_id}']",  # Generate XPath from ID if not provided
+            'CSS Selector': css ,  # Generate CSS from ID if not provided
+            'XPath (Absolute)': xpath ,  # Generate XPath from ID if not provided
             'XPath (Absolute)': full_xpath  # This can be None if not available
         }
 
