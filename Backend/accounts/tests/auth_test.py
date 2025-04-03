@@ -5,7 +5,6 @@ from rest_framework.test import APITestCase
 
 
 ### pre-requisite for this testcase : nothing
-
 ### goal : create registered user then make login to check authentication in successfull and failures scenarios
 class AuthTestCase(APITestCase):
     def setUp(self):
