@@ -343,16 +343,29 @@ class SelfHealingFramework:
     def get_healing_report(self):
         """Generate report of all healing actions."""
         if not self.healing_history:
-            return {"message": "No changes detected. The script ran smoothly without any issues."}
-        return json.dumps(self.healing_history, indent=2)
+            return json.dumps({"message": "No changes detected. The script ran smoothly without any issues."} , indent=2)
+        healed_report = {
+            "healed_elements" : []
+        }
+        for element_id , details in self.healing_history.items():
+             healed_report["healed_elements"].append({
+                "original_element_id": element_id,
+                "timestamp": details["timestamp"],
+                "original_strategies": details["original_strategies"],
+                "new_strategies": details["new_strategies"],
+                "matched_attributes": details["matched_attributes"],
+                "note": details["note"]
+            })
+        return json.dumps(healed_report, indent=2)
 
     def save_report(self, filename="reports.json"):
         """Save healing report to a file."""
         report = self.get_healing_report()
-        with open(filename, "w") as report_file:
+        with open(filename, "w" , encoding="utf-8") as report_file:
             report_file.write(report)
             self.logger.info(f"Healing report saved to {filename}")
 
+        
     def close(self):
         """Clean up resources."""
         if self.driver:
