@@ -1,3 +1,83 @@
 {
-  "message": "No changes detected. The script ran smoothly without any issues."
+  "healed_elements": [
+    {
+      "original_element_id": "user",
+      "timestamp": "2025-04-03T22:17:34.766506",
+      "original_strategies": {
+        "id": "user",
+        "css": "input#user134",
+        "xpath": "/[document][1]/html[1]/body[1]/div[1]/form[5]/input[1]",
+        "full_xpath": "/[document][1]/html[1]/body[1]/div[1]/form[5]/input[1]"
+      },
+      "new_strategies": {
+        "id": "user12334",
+        "css": "#user12334",
+        "xpath": "/html/body/div/form/input[1]",
+        "full_xpath": "/html/body/div/form/input[1]"
+      },
+      "matched_attributes": {
+        "id": "user12334",
+        "tag_name": "input",
+        "class_name": "",
+        "text": "",
+        "type": "text",
+        "name": "usnxx",
+        "xpath": "/html/body/div/form/input[1]"
+      },
+      "note": "This element was healed with new locator strategies."
+    },
+    {
+      "original_element_id": "nan",
+      "timestamp": "2025-04-03T22:18:11.975631",
+      "original_strategies": {
+        "id": "nan",
+        "css": "button.add-to-cart-button",
+        "xpath": "/[document][1]/html[1]/body[1]/div[1]/div[1]/button[1]",
+        "full_xpath": "/[document][1]/html[1]/body[1]/div[1]/div[1]/button[1]"
+      },
+      "new_strategies": {
+        "id": "",
+        "css": null,
+        "xpath": "/html/body/div/div/button",
+        "full_xpath": "/html/body/div/div/button"
+      },
+      "matched_attributes": {
+        "id": "",
+        "tag_name": "button",
+        "class_name": "add-to-cart-button",
+        "text": "Add to Cart",
+        "type": "submit",
+        "name": "",
+        "xpath": "/html/body/div/div/button"
+      },
+      "note": "This element was healed with new locator strategies."
+    },
+    {
+      "original_element_id": "card",
+      "timestamp": "2025-04-03T22:18:41.890149",
+      "original_strategies": {
+        "id": "card",
+        "css": "input#card-number",
+        "xpath": "/[document][1]/html[1]/body[1]/div[1]/form[1]/input[2]",
+        "full_xpath": "/[document][1]/html[1]/body[1]/div[1]/form[1]/input[2]"
+      },
+      "new_strategies": {
+        "id": "card-number",
+        "css": "#card-number",
+        "xpath": "/html/body/div/form/input[2]",
+        "full_xpath": "/html/body/div/form/input[2]"
+      },
+      "matched_attributes": {
+        "id": "card-number",
+        "tag_name": "input",
+        "class_name": "",
+        "text": "",
+        "type": "text",
+        "name": "card-number",
+        "xpath": "/html/body/div/form/input[2]"
+      },
+      "note": "This element was healed with new locator strategies."
+    }
+  ],
+  "broken_elements": []
 }

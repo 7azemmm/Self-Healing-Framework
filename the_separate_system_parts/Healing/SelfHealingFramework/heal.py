@@ -13,6 +13,7 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer, util
 from symspellpy import SymSpell
+import os
 
 # Set up logging configuration
 logging.basicConfig(level=logging.DEBUG)
@@ -65,6 +66,13 @@ class ElementHealer:
 
     def heal_element(self, original_attributes, page_elements):
         """Attempt to heal a broken element locator."""
+        logger.info(f"Starting healing process with {len(page_elements)} elements")
+        logger.info(f"Original attributes: {original_attributes}")
+        
+        if not page_elements:
+            logger.error("No page elements found for comparison")
+            return None
+            
         best_match = self._find_best_match(original_attributes, page_elements)
         if best_match:
             logger.info(f"Best match found: {best_match['attributes']}")
@@ -76,27 +84,53 @@ class ElementHealer:
         """Find the most similar element on the page using ML."""
         best_match = None
         best_score = 0
-        threshold = 0.3
-
-        original_text = self._attributes_to_text(original_attributes)
-        original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
-
+        threshold = 0.4  # Lower threshold to find more matches
+        
+        # Filter out None values and ensure we have at least some text to compare
+        filtered_attrs = {k: v for k, v in original_attributes.items() if v}
+        if not filtered_attrs:
+            logger.warning("No valid attributes found for matching")
+            # Add fallback attributes if needed
+            filtered_attrs = {'tag_name': 'input'}
+            
+        original_text = self._attributes_to_text(filtered_attrs)
+        logger.debug(f"Original text for matching: '{original_text}'")
+        
+        try:
+            original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
+        except Exception as e:
+            logger.error(f"Error encoding original text: {e}")
+            return None
+            
+        matches = []
         for element_data in page_elements:
-            current_text = self._attributes_to_text(element_data['attributes'])
-            current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
-
-            similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
-            logger.debug(f"Comparing with element {element_data['attributes']}, similarity: {similarity}")
-
-            if similarity > best_score and similarity > threshold:
-                best_score = similarity
-                best_match = element_data
-
+            try:
+                current_text = self._attributes_to_text(element_data['attributes'])
+                if not current_text.strip():
+                    continue
+                    
+                current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
+                similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
+                
+                logger.debug(f"Element: {current_text}, Similarity: {similarity}")
+                matches.append((similarity, element_data))
+                
+                if similarity > best_score and similarity > threshold:
+                    best_score = similarity
+                    best_match = element_data
+            except Exception as e:
+                logger.debug(f"Error comparing element: {e}")
+                
+        # Log top matches for debugging
+        matches.sort(reverse=True)
+        for i, (score, element) in enumerate(matches[:3]):
+            logger.info(f"Top match #{i+1}: Score {score}, Element: {element['attributes']}")
+                
         return best_match
 
     def _attributes_to_text(self, attributes):
         """Convert attributes dictionary to text for similarity comparison."""
-        return ' '.join(str(value) for value in attributes.values() if value)
+        return ' '.join(str(value) for key, value in attributes.items() if value)
 
 
 class MappingLoader:
@@ -113,11 +147,13 @@ class MappingLoader:
             element_id = str(row['ID']).strip()
             css = str(row['CSS Selector']).strip()
             xpath = row['XPath (Absolute)'].strip()
+            Name = str(row['Name']).strip()
             full_xpath = row['XPath (Absolute)'].strip()
             link = row['Page'].strip()
             mappings[bdd_step] = {
                 'ID': element_id,
                 'CSS Selector': css,
+                'Name' : Name ,
                 'XPath (Absolute)': xpath,
                 'XPath (Absolute)': full_xpath,
                 'Page': link,
@@ -125,13 +161,13 @@ class MappingLoader:
             }
         return mappings
 
-    def _generate_locator_strategies(self, element_id, css=None, xpath=None, full_xpath=None):
+    def _generate_locator_strategies(self, element_id, css, xpath, full_xpath):
         """Generate multiple locator strategies for an element."""
         return {
             'id': element_id,
-            'css': css or f'#{element_id}',  # Generate CSS from ID if not provided
-            'xpath': xpath or f"//*[@id='{element_id}']",  # Generate XPath from ID if not provided
-            'full_xpath': full_xpath  # This can be None if not available
+            'css': css ,
+            'xpath': xpath ,
+            'full_xpath': full_xpath 
         }
 
 
@@ -174,12 +210,27 @@ class SelfHealingFramework:
         self.mapping_loader = MappingLoader(mapping_file_path)
         self.mappings = self.mapping_loader.load_mappings()
         self.healing_history = {}
-        self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
-        self.rl_agent = RLHealingAgent(['id', 'css', 'xpath', 'xpath_contains'])  # RL agent for strategy selection
-        self.element_cache = {}  # Cache for frequently accessed elements
-        self.sym_spell = SymSpell()  # Error correction for BDD steps
-        self.sym_spell.load_dictionary('path/to/dictionary.txt', term_index=0, count_index=1)
-        self.retry_attempts = 3  # Number of retry attempts for finding elements
+        self.broken_elements = {}  # New: Track broken elements that couldn't be healed
+        
+        # Fix model loading with error handling
+        try:
+            self.similarity_model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')  # Use a default model that exists
+        except Exception as e:
+            self.logger.error(f"Error loading model: {e}")
+            # Fallback to a simple model or raise exception
+            raise Exception(f"Could not load similarity model: {e}")
+        
+        self.rl_agent = RLHealingAgent(['id', 'css', 'xpath', 'xpath_contains'])
+        self.element_cache = {}
+        
+        
+        self.sym_spell = SymSpell()
+        try:
+            self.sym_spell.load_dictionary('dictionary.txt', term_index=0, count_index=1)
+        except Exception as e:
+            self.logger.warning(f"Could not load dictionary: {e}. Proceeding without spell correction.")
+        
+        self.retry_attempts = 2
         self.element_locator = ElementLocator(self.driver)
         self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
         self.action_executor = ActionExecutor(self.driver)
@@ -265,50 +316,62 @@ class SelfHealingFramework:
 
     def _find_with_healing(self, element_info: dict, timeout: int):
         """Find element with multiple strategies and self-healing."""
+        self.logger.debug(f"Finding element with strategies: {element_info['locator_strategies']}")
+        
         with ThreadPoolExecutor() as executor:
             futures = {
-                executor.submit(self.element_locator.find_element, strategy, locator, timeout): strategy
-                for strategy, locator in element_info['locator_strategies'].items()
+                executor.submit(self.element_locator.find_element, strategy, locator, timeout): (strategy, locator)
+                for strategy, locator in element_info['locator_strategies'].items() if locator
             }
 
             for future in futures:
+                strategy, locator = futures[future]
                 element = future.result()
                 if element:
+                    self.logger.debug(f"Found element using strategy {strategy}: {locator}")
                     return element
 
         # If all strategies fail, attempt healing
-        self.logger.warning(f"All locator strategies failed for element: {element_info['element_id']}, attempting healing...")
+        self.logger.warning(f"All locator strategies failed for element: {element_info['ID']}, attempting healing...")
         return self._heal_element(element_info)
 
     def _heal_element(self, element_info: dict):
         """Attempt to heal a broken element locator."""
         try:
+            self.logger.info(f"Attempting to heal element: {element_info['ID']}")
             original_attributes = self._get_original_attributes(element_info)
+            self.logger.debug(f"Original attributes: {original_attributes}")
+            
             page_elements = self._get_all_page_elements()
-
+            self.logger.debug(f"Found {len(page_elements)} candidate elements on page")
+            
             best_match = self.element_healer.heal_element(original_attributes, page_elements)
             if best_match:
+                self.logger.info(f"Healing successful for element {element_info['ID']}")
                 self._update_locator_strategies(element_info, best_match)
                 return best_match['element']
-
-            self.logger.error("No suitable match found during healing")
+            
+            self.logger.error(f"No suitable match found during healing for {element_info['ID']}")
         except Exception as e:
             self.logger.error(f"Error during healing process: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
         return None
 
     def _get_original_attributes(self, element_info: dict) -> dict:
         """Get original element attributes from stored information."""
         return {
-            'id': element_info['element_id'],
-            'tag_name': element_info.get('tag_name'),
-            'class_name': element_info.get('class_name'),
-            'text': element_info.get('text')
+            'id': element_info['ID'],
+            'tag_name': element_info.get('tag_name', ''),
+            'class_name': element_info.get('CSS Selector', ''),  # Use CSS Selector as class_name
+            'text': '',  # Add default empty text
+            'xpath': element_info.get('XPath (Absolute)', '')  # Add XPath information
         }
 
     def _update_locator_strategies(self, element_info: dict, new_element: dict):
         """Update stored locator strategies with new information."""
-        new_id = new_element['attributes']['id']
-        new_xpath = new_element['attributes'].get('xpath')
+        new_id = new_element['attributes'].get('id', '')
+        new_xpath = new_element['attributes'].get('xpath', '')
         
         # Generate CSS selector based on available attributes
         css_selector = f"#{new_id}" if new_id else None
@@ -320,14 +383,15 @@ class SelfHealingFramework:
             full_xpath=new_xpath
         )
 
-        self.healing_history[element_info['element_id']] = {
+        self.healing_history[element_info['ID']] = {  # Use 'ID' instead of 'element_id'
             'timestamp': datetime.now().isoformat(),
             'original_strategies': element_info['locator_strategies'].copy(),
             'new_strategies': new_strategies,
             'matched_attributes': new_element['attributes'],
-            'note': "This element was not found in the latest BDD mapping and was healed."
+            'note': "This element was healed with new locator strategies."
         }
 
+        # Update the element info with new strategies
         element_info['locator_strategies'] = new_strategies
 
     def _record_successful_find(self, bdd_step: str, element_info: dict):
@@ -336,19 +400,36 @@ class SelfHealingFramework:
 
     def _record_failed_find(self, bdd_step: str, element_info: dict):
         """Record failed element location with a screenshot."""
+        timestamp = datetime.now().isoformat()
         screenshot_path = f"screenshots/failure_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.driver.save_screenshot(screenshot_path)
-        self.logger.error(f"Failed to find element for step: {bdd_step}. Screenshot saved to {screenshot_path}")
+        
+        # Add to broken elements history
+        self.broken_elements[element_info['ID']] = {
+            'timestamp': timestamp,
+            'bdd_step': bdd_step,
+            'original_strategies': element_info['locator_strategies'],
+            'screenshot_path': screenshot_path,
+            'note': "Element could not be found or healed"
+        }
+        
+        self.logger.error(f"Failed to find element for step '{bdd_step}'. Screenshot saved to {screenshot_path}")
 
     def get_healing_report(self):
-        """Generate report of all healing actions."""
-        if not self.healing_history:
-            return json.dumps({"message": "No changes detected. The script ran smoothly without any issues."} , indent=2)
-        healed_report = {
-            "healed_elements" : []
+        """Generate report of all healing actions and broken elements."""
+        if not self.healing_history and not self.broken_elements:
+            return json.dumps({
+                "message": "No changes detected. The script ran smoothly without any issues."
+            }, indent=2)
+        
+        report = {
+            "healed_elements": [],
+            "broken_elements": []
         }
-        for element_id , details in self.healing_history.items():
-             healed_report["healed_elements"].append({
+        
+        # Add healed elements
+        for element_id, details in self.healing_history.items():
+            report["healed_elements"].append({
                 "original_element_id": element_id,
                 "timestamp": details["timestamp"],
                 "original_strategies": details["original_strategies"],
@@ -356,12 +437,38 @@ class SelfHealingFramework:
                 "matched_attributes": details["matched_attributes"],
                 "note": details["note"]
             })
-        return json.dumps(healed_report, indent=2)
+        
+        # Add broken elements
+        for element_id, details in self.broken_elements.items():
+            report["broken_elements"].append({
+                "element_id": element_id,
+                "timestamp": details["timestamp"],
+                "bdd_step": details["bdd_step"],
+                "original_strategies": details["original_strategies"],
+                "screenshot_path": details["screenshot_path"],
+                "note": details["note"]
+            })
+        
+        return json.dumps(report, indent=2)
 
     def save_report(self, filename="reports.json"):
         """Save healing report to a file."""
+        # Create screenshots directory if it doesn't exist
+        screenshots_dir = "screenshots"
+        if not os.path.exists(screenshots_dir):
+            os.makedirs(screenshots_dir)
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.dirname(filename)
+        if reports_dir and not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+        
+        # Create a more comprehensive report
         report = self.get_healing_report()
-        with open(filename, "w" , encoding="utf-8") as report_file:
+        self.logger.info(f"Healing history: {len(self.healing_history)} healed elements")
+        self.logger.info(f"Broken elements: {len(self.broken_elements)} elements")
+        
+        with open(filename, "w", encoding="utf-8") as report_file:
             report_file.write(report)
             self.logger.info(f"Healing report saved to {filename}")
 
