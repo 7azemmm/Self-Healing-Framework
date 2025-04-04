@@ -9,7 +9,7 @@ import {
   FiPlusCircle,
   FiBookOpen
 } from "react-icons/fi";
-import LogoImage from "../../assets/images/brand-logo-new.png"
+import LogoImage from "../../assets/images/testing.png"
 
 const Sidebar = () => {
   return (
@@ -145,6 +145,7 @@ const Sidebar = () => {
   );
 };
 
+// eslint-disable-next-line react/prop-types
 const NavSection = ({ label, children }) => (
   <Box>
     {label && (
@@ -167,6 +168,7 @@ const NavSection = ({ label, children }) => (
   </Box>
 );
 
+// eslint-disable-next-line react/prop-types
 const NavItem = ({ icon, label, href, color = "white" }) => (
   <Tooltip
     label={label}
