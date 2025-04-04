@@ -688,10 +688,10 @@ const Execute = () => {
                           <Tr key={elementId}>
                             <Td>{elementId}</Td>
                             <Td>{details.timestamp || "N/A"}</Td>
-                            <Td fontSize="xs" color="gray.600">{details.old_css_selector || "N/A"}</Td>
-                            <Td fontSize="xs" color="gray.600">{details.new_css_selector || "N/A"}</Td>
-                            <Td fontSize="xs" color="gray.600">{details.old_xpath || "N/A"}</Td>
-                            <Td fontSize="xs" color="gray.600">{details.new_xpath || "N/A"}</Td>
+                            <Td fontSize="xs" color="gray.600">{details.original_strategies['CSS Selector'] || "N/A"}</Td>
+                            <Td fontSize="xs" color="gray.600">{details.new_strategies['CSS Selector'] || "N/A"}</Td>
+                            <Td fontSize="xs" color="gray.600">{details.original_strategies['XPath (Absolute)'] || "N/A"}</Td>
+                            <Td fontSize="xs" color="gray.600">{details.new_strategies['XPath (Absolute)'] || "N/A"}</Td>
                             <Td>{details.note || "N/A"}</Td>
                           </Tr>
                         ))}

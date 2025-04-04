@@ -257,7 +257,7 @@ def execute_tests(request):
         framework = SelfHealingFramework(result)
         framework.start_browser()
         try:
-            framework.execute_all_steps(delay=3.5)
+            framework.execute_all_steps(delay=0.00)
             report = framework.report()
 
             # Parse the report
@@ -301,7 +301,7 @@ def execute_tests(request):
             )
             print("loooooooooooooooooooooooogggggg")
             print(report_data)
-            return Response({"message": report_data, "success": True}, status=200)
+            return Response({"message": report, "success": True}, status=200)
         finally:
             framework.close()
     except Scenarios.DoesNotExist:
