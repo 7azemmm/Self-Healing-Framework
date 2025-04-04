@@ -262,17 +262,33 @@ def execute_tests(request):
 
             # Parse the report
             report_data = json.loads(report) if isinstance(report, str) else report
-
             number_of_healed_elements = 0
             if isinstance(report_data, dict) and "message" not in report_data:
                 # Healing occurred; store each healed element
                 for old_id, details in report_data.items():
+    # Old strategies
+                    old_id_val = details['original_strategies'].get('id', '')
+                    old_css = details['original_strategies'].get('CSS Selector', '')
+                    old_xpath = details['original_strategies'].get('XPath (Absolute)', '')
+
+    # New strategies
+                    new_id = details['new_strategies'].get('id', '')
+                    new_css = details['new_strategies'].get('CSS Selector', '')
+                    new_xpath = details['new_strategies'].get('XPath (Absolute)', '')
+
                     HealedElements.objects.create(
-                        execution=execution,
-                        past_element_attribute=old_id,
-                        new_element_attribute=details['new_strategies']['id'],
-                        label=True  # Indicates healing was successful
+                      execution=execution,
+                      past_element_attribute=old_id_val,
+                      past_css_selector=old_css,
+                      past_xpath_absolute=old_xpath,
+
+                      new_element_attribute=new_id,
+                      new_css_selector=new_css,
+                      new_xpath_absolute=new_xpath,
+
+                      label=True
                     )
+
                 number_of_healed_elements = len(report_data)
 
             # Number of scenarios is the number of rows in the mapping file
@@ -283,8 +299,9 @@ def execute_tests(request):
                 number_of_scenarios=number_of_scenarios,
                 number_of_healed_elements=number_of_healed_elements
             )
-
-            return Response({"message": report, "success": True}, status=200)
+            print("loooooooooooooooooooooooogggggg")
+            print(report_data)
+            return Response({"message": report_data, "success": True}, status=200)
         finally:
             framework.close()
     except Scenarios.DoesNotExist:
