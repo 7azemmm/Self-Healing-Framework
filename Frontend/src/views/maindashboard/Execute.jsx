@@ -674,25 +674,25 @@ const Execute = () => {
                     <Table variant="simple" size="sm">
                       <Thead>
                         <Tr>
-                          <Th>Element ID</Th>
                           <Th>Timestamp</Th>
+                          <Th>Old ID</Th>
+                          <Th>New ID</Th>
                           <Th>Old CSS Selector</Th>
                           <Th>New CSS Selector</Th>
                           <Th>Old XPath</Th>
                           <Th>New XPath</Th>
-                          <Th>Note</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {Object.entries(testResults.healingReport).map(([elementId, details]) => (
                           <Tr key={elementId}>
-                            <Td>{elementId}</Td>
                             <Td>{details.timestamp || "N/A"}</Td>
+                            <Td>{elementId}</Td>
+                            <Td fontSize="xs" color="gray.600">{details.new_strategies['id'] || "N/A"}</Td>
                             <Td fontSize="xs" color="gray.600">{details.original_strategies['CSS Selector'] || "N/A"}</Td>
                             <Td fontSize="xs" color="gray.600">{details.new_strategies['CSS Selector'] || "N/A"}</Td>
                             <Td fontSize="xs" color="gray.600">{details.original_strategies['XPath (Absolute)'] || "N/A"}</Td>
                             <Td fontSize="xs" color="gray.600">{details.new_strategies['XPath (Absolute)'] || "N/A"}</Td>
-                            <Td>{details.note || "N/A"}</Td>
                           </Tr>
                         ))}
                       </Tbody>
