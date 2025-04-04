@@ -232,68 +232,64 @@ def get_projects(request):
 def execute_tests(request):
     data = request.data
     project_id = data.get('project_id')
-    execution_name = data.get('execution_name', 'Default Execution')  # Default if not provided
+    execution_name = data.get('execution_name', 'Default Execution')
 
-    # Validate project_id
     if not project_id:
         return Response({"error": "project_id is required"}, status=400)
 
-    # Create a new execution entry
     execution = Execution.objects.create(
         execution_name=execution_name,
         project_id=project_id
     )
 
     try:
-        # Retrieve scenarios for the project
         scenarios = Scenarios.objects.get(project_id=project_id)
         mapping = scenarios.mapping_file
         print("Mapping Data:", mapping)
         header = mapping[0]
         result = [dict(zip(header, row)) for row in mapping[1:]]
         framework = SelfHealingFramework(result)
-
-        # Execute tests using the framework
-        framework = SelfHealingFramework(result)
         framework.start_browser()
         try:
             framework.execute_all_steps(delay=3.5)
             report = framework.report()
-
-            # Parse the report
             report_data = json.loads(report) if isinstance(report, str) else report
             number_of_healed_elements = 0
             if isinstance(report_data, dict) and "message" not in report_data:
-                # Healing occurred; store each healed element
                 for old_id, details in report_data.items():
-    # Old strategies
                     old_id_val = details['original_strategies'].get('id', '')
                     old_css = details['original_strategies'].get('CSS Selector', '')
                     old_xpath = details['original_strategies'].get('XPath (Absolute)', '')
-
-    # New strategies
                     new_id = details['new_strategies'].get('id', '')
                     new_css = details['new_strategies'].get('CSS Selector', '')
                     new_xpath = details['new_strategies'].get('XPath (Absolute)', '')
-
                     HealedElements.objects.create(
-                      execution=execution,
-                      past_element_attribute=old_id_val,
-                      past_css_selector=old_css,
-                      past_xpath_absolute=old_xpath,
-
-                      new_element_attribute=new_id,
-                      new_css_selector=new_css,
-                      new_xpath_absolute=new_xpath,
-
-                      label=True
+                        execution=execution,
+                        past_element_attribute=old_id_val,
+                        past_css_selector=old_css,
+                        past_xpath_absolute=old_xpath,
+                        new_element_attribute=new_id,
+                        new_css_selector=new_css,
+                        new_xpath_absolute=new_xpath,
+                        label=True
                     )
-
                 number_of_healed_elements = len(report_data)
 
-            # Number of scenarios is the number of rows in the mapping file
+                # Update mapping_file with new attributes
+                for old_id, details in report_data.items():
+                    new_id = details['new_strategies'].get('id', '')
+                    new_css = details['new_strategies'].get('CSS Selector', '')
+                    new_xpath = details['new_strategies'].get('XPath (Absolute)', '')
+                    for row in mapping[1:]:
+                        if row[2] == old_id:
+                            row[2] = new_id
+                            row[8] = new_css
+                            row[6] = new_xpath
+                            break
+                scenarios.mapping_file = mapping
+                scenarios.save()
+
             number_of_scenarios = sum(1 for row in result if row["Step"].strip().startswith("When"))
-            # Store metrics
             Metrics.objects.create(
                 execution=execution,
                 number_of_scenarios=number_of_scenarios,
@@ -308,7 +304,7 @@ def execute_tests(request):
         return Response({"error": "Scenarios not found for this project"}, status=404)
     except Exception as e:
         return Response({"error": str(e), "success": False}, status=500)
-        
+    
 @api_view(['GET'])
 def get_metrics(request, project_id):
     metrics = Metrics.objects.filter(execution__project_id=project_id)
