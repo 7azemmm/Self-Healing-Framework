@@ -28,10 +28,6 @@ const routes = [
     component: Execute,
   },
   {
-    path: '/settings',
-    component: Settings,
-  },
-  {
     path: '/',
     component: Login,
   },
