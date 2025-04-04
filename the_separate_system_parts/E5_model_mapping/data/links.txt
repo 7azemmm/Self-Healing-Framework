@@ -1,0 +1,4 @@
+https://melkmeshi.github.io/miu/checkout.html
+https://melkmeshi.github.io/miu/confirmation.html
+https://melkmeshi.github.io/miu/registration.html
+https://melkmeshi.github.io/miu/shop.html
