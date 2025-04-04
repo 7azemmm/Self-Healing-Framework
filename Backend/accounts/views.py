@@ -275,13 +275,12 @@ def execute_tests(request):
                     )
                 number_of_healed_elements = len(report_data)
 
-                # Update mapping_file with new attributes
                 for old_id, details in report_data.items():
                     new_id = details['new_strategies'].get('id', '')
                     new_css = details['new_strategies'].get('CSS Selector', '')
                     new_xpath = details['new_strategies'].get('XPath (Absolute)', '')
                     for row in mapping[1:]:
-                        if row[2] == old_id:
+                        if row[2] == old_id and new_id and new_css and new_xpath:
                             row[2] = new_id
                             row[8] = new_css
                             row[6] = new_xpath
@@ -295,8 +294,6 @@ def execute_tests(request):
                 number_of_scenarios=number_of_scenarios,
                 number_of_healed_elements=number_of_healed_elements
             )
-            print("loooooooooooooooooooooooogggggg")
-            print(report_data)
             return Response({"message": report, "success": True}, status=200)
         finally:
             framework.close()
