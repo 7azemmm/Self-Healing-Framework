@@ -175,8 +175,8 @@ class SelfHealingFramework:
         for bdd_step, element_info in self.mappings.items():
             current_url = self.driver.current_url
             if current_url != element_info['Page']:
-                self.driver.get(element_info['Page'])
                 time.sleep(delay)
+                self.driver.get(element_info['Page'])
             action, value = self._determine_action(bdd_step)
             try:
                 element = self.find_element(bdd_step)

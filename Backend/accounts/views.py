@@ -251,7 +251,7 @@ def execute_tests(request):
         framework = SelfHealingFramework(result)
         framework.start_browser()
         try:
-            framework.execute_all_steps(delay=0.00)
+            framework.execute_all_steps(delay=3.00)
             report = framework.report()
             report_data = json.loads(report) if isinstance(report, str) else report
             number_of_healed_elements = 0
