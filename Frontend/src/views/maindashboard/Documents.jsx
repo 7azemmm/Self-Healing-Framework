@@ -260,75 +260,80 @@ const Documents = () => {
                     ))}
                   </Select>
 
-                  {/* BDD Files Upload */}
-                  <Box>
-                    <Text color="#4a5568" mb={2} fontWeight="medium">
-                      BDD Files
-                    </Text>
-                    <Box className="file-upload-area">
-                      <VStack spacing={2} align="center">
-                        <FaFileUpload size={24} color="#3182ce" />
-                        <Text color="#4a5568" fontSize="sm">
-                          {bddFiles.length > 0
-                            ? `${bddFiles.length} file(s) selected`
-                            : "Drop .feature files here or click to browse"}
-                        </Text>
-                        <Input
-                          type="file"
-                          accept=".feature"
-                          onChange={(e) => setBddFiles(Array.from(e.target.files))}
-                          multiple
-                          opacity={0}
-                          position="absolute"
-                          top={0}
-                          left={0}
-                          width="100%"
-                          height="100%"
-                          cursor="pointer"
-                        />
-                      </VStack>
-                    </Box>
-                    {bddFiles.length > 0 && (
-                      <Text fontSize="sm" color="#3182ce" mt={2}>
-                        {bddFiles.map(file => file.name).join(", ")}
-                      </Text>
-                    )}
-                  </Box>
+         {/* BDD Files Upload */}
+<Box>
+  <Text color="#4a5568" mb={2} fontWeight="medium">
+    BDD Files
+  </Text>
+  <label>
+    <Box className="file-upload-area" position="relative">
+      <VStack spacing={2} align="center">
+        <FaFileUpload size={24} color="#3182ce" />
+        <Text color="#4a5568" fontSize="sm">
+          {bddFiles.length > 0
+            ? `${bddFiles.length} file(s) selected`
+            : "Click here to upload .feature files"}
+        </Text>
+      </VStack>
+      <Input
+        type="file"
+        accept=".feature"
+        onChange={(e) => setBddFiles(Array.from(e.target.files))}
+        multiple
+        position="absolute"
+        top="0"
+        left="0"
+        width="100%"
+        height="100%"
+        opacity="0"
+        cursor="pointer"
+      />
+    </Box>
+  </label>
+  {bddFiles.length > 0 && (
+    <Text fontSize="sm" color="#3182ce" mt={2}>
+      {bddFiles.map(file => file.name).join(", ")}
+    </Text>
+  )}
+</Box>
 
-                  {/* Test Script Files Upload */}
-                  <Box>
-                    <Text color="#4a5568" mb={2} fontWeight="medium">
-                      Test Script Files
-                    </Text>
-                    <Box className="file-upload-area">
-                      <VStack spacing={2} align="center">
-                        <FaFileUpload size={24} color="#3182ce" />
-                        <Text color="#4a5568" fontSize="sm">
-                          {testScriptFiles.length > 0
-                            ? `${testScriptFiles.length} file(s) selected`
-                            : "Drop .java or .py files here or click to browse"}
-                        </Text>
-                        <Input
-                          type="file"
-                          accept=".java,.py"
-                          onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
-                          multiple
-                          opacity={0}
-                          position="absolute"
-                          top={0}
-                          left={0}
-                          width="100%"
-                          height="100%"
-                          cursor="pointer"
-                        />
-                      </VStack>
-                    </Box>
-                    {testScriptFiles.length > 0 && (
-                      <Text fontSize="sm" color="#3182ce" mt={2}>
-                        {testScriptFiles.map(file => file.name).join(", ")}
-                      </Text>
-                    )}
-                  </Box>
+{/* Test Script Files Upload */}
+<Box>
+  <Text color="#4a5568" mb={2} fontWeight="medium">
+    Test Script Files
+  </Text>
+  <label>
+    <Box className="file-upload-area" position="relative">
+      <VStack spacing={2} align="center">
+        <FaFileUpload size={24} color="#3182ce" />
+        <Text color="#4a5568" fontSize="sm">
+          {testScriptFiles.length > 0
+            ? `${testScriptFiles.length} file(s) selected`
+            : "Click here to upload .java or .py files"}
+        </Text>
+      </VStack>
+      <Input
+        type="file"
+        accept=".java,.py"
+        onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
+        multiple
+        position="absolute"
+        top="0"
+        left="0"
+        width="100%"
+        height="100%"
+        opacity="0"
+        cursor="pointer"
+      />
+    </Box>
+  </label>
+  {testScriptFiles.length > 0 && (
+    <Text fontSize="sm" color="#3182ce" mt={2}>
+      {testScriptFiles.map(file => file.name).join(", ")}
+    </Text>
+  )}
+</Box>
+
 
                   <Button
                     leftIcon={<FaUpload />}
@@ -417,3 +422,7 @@ const Documents = () => {
 };
 
 export default Documents;
+
+
+
+
