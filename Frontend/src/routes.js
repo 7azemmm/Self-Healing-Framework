@@ -3,7 +3,6 @@ import Signup from './views/auth/Signup'; // Adjust the path as needed
 import Dashboard from './views/maindashboard/Dashboard.jsx';
 import Documents from './views/maindashboard/Documents.jsx';
 import Execute from './views/maindashboard/Execute.jsx';
-// import Settings from './views/maindashboard/Settings.jsx';
 import AddScenario from './views/addScenario/addScenarioPage.jsx';
 import CreateProject from './views/maindashboard/CreateProject.jsx'; // Add this line
 
@@ -28,10 +27,7 @@ const routes = [
     path: '/execute',
     component: Execute,
   },
-  // {
-  //   path: '/settings',
-  //   component: Settings,
-  // },
+  
   {
     path: '/',
     component: Login,
