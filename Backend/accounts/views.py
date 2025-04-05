@@ -10,7 +10,7 @@ from .models import Project,Scenarios,Metrics,Execution,HealedElements
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
-from .controllers.heal import SelfHealingFramework
+from .controllers.self_healing_framework.framework import SelfHealingFramework
 import json
 from django.db.models import Sum
 
