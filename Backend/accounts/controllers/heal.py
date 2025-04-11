@@ -13,6 +13,7 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer, util
 from symspellpy import SymSpell
+import os
 
 
 class RLHealingAgent:
@@ -160,6 +161,7 @@ class SelfHealingFramework:
         self.driver = None
         self.mapping_loader = MappingLoader(mapping)
         self.mappings = self.mapping_loader.load_mappings()
+        self.scenario_count = 0  
         self.healing_history = {}
         self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
         self.rl_agent = RLHealingAgent(['id', 'CSS Selector', 'XPath (Absolute)', 'xpath_contains'])  # RL agent for strategy selection
@@ -169,6 +171,8 @@ class SelfHealingFramework:
         self.element_locator = ElementLocator(self.driver)
         self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
         self.action_executor = ActionExecutor(self.driver)
+        self.broken_elements = {}  # Added for the new get_healing_report function
+        self.scenario_count = len(self.mappings)  # Track total number of scenarios
 
     def execute_all_steps(self, delay=1.5):
         """Automatically execute all BDD steps from the CSV."""
@@ -318,12 +322,88 @@ class SelfHealingFramework:
         """Record failed element location with a screenshot."""
         screenshot_path = f"screenshots/failure_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.driver.save_screenshot(screenshot_path)
+        self.broken_elements[element_info['ID']] = {
+            'timestamp': datetime.now().isoformat(),
+            'bdd_step': bdd_step,
+            'original_strategies': element_info['locator_strategies'].copy(),
+            'screenshot_path': screenshot_path,
+            'note': "This element was not found in the latest BDD mapping and is broken."
+        }
 
     def get_healing_report(self):
-        """Generate report of all healing actions."""
-        if not self.healing_history:
-            return {"message": "No changes detected. The script ran smoothly without any issues."}
-        return json.dumps(self.healing_history, indent=2)
+        """Generate standardized report compatible with frontend expectations."""
+        # Initialize report with default structure
+        report = {
+            "success": True,
+            "message": "",
+            "healed_elements": [],
+            "broken_elements": [],
+            "metrics": {
+                "total_scenarios": 0,
+                "healed_count": 0,
+                "broken_count": 0
+            }
+        }
+
+        # Case 1: No healing or broken elements
+        if not self.healing_history and not self.broken_elements:
+            report["message"] = "No changes detected. The script ran smoothly without any issues."
+            return report  # Return as dict (frontend will handle JSON parsing)
+
+        # Process healed elements
+        for element_id, details in self.healing_history.items():
+            report["healed_elements"].append({
+                "original_element_id": element_id,
+                "timestamp": details.get("timestamp", ""),
+                "original_strategies": details.get("original_strategies", {}),
+                "new_strategies": details.get("new_strategies", {}),
+                "matched_attributes": details.get("matched_attributes", []),
+                "note": details.get("note", "")
+            })
+
+        # Process broken elements
+        for element_id, details in self.broken_elements.items():
+            report["broken_elements"].append({
+                "element_id": element_id,
+                "timestamp": details.get("timestamp", ""),
+                "bdd_step": details.get("bdd_step", ""),
+                "original_strategies": details.get("original_strategies", {}),
+                "screenshot_path": details.get("screenshot_path", ""),
+                "note": details.get("note", "")
+            })
+
+        # Update metrics
+        report["metrics"] = {
+            "total_scenarios": self.scenario_count,
+            "healed_count": len(report["healed_elements"]),
+            "broken_count": len(report["broken_elements"])
+        }
+
+        # Determine overall success status
+        report["success"] = len(report["broken_elements"]) == 0
+
+        return report  # Return as dictionary
+
+    def save_report(self, filename="reports.json"):
+        """Save healing report to a file."""
+        # Create screenshots directory if it doesn't exist
+        screenshots_dir = "screenshots"
+        if not os.path.exists(screenshots_dir):
+            os.makedirs(screenshots_dir)
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.dirname(filename)
+        if reports_dir and not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+        
+        # Create a more comprehensive report
+        report = self.get_healing_report()
+        self.logger.info(f"Healing history: {len(self.healing_history)} healed elements")
+        self.logger.info(f"Broken elements: {len(self.broken_elements)} elements")
+        
+        with open(filename, "w", encoding="utf-8") as report_file:
+            report_file.write(report)
+            self.logger.info(f"Healing report saved to {filename}")
 
     def report(self):
         """Save healing report to a file."""

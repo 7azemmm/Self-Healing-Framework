@@ -90,7 +90,7 @@ class HealedElements(models.Model):
     execution = models.ForeignKey(Execution, on_delete=models.CASCADE, null=False, related_name='healed_elements')
     past_element_attribute = models.CharField(max_length=60, null=False)
     new_element_attribute = models.CharField(max_length=60, null=False)
-    label = models.BooleanField(null=False)
+    label = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

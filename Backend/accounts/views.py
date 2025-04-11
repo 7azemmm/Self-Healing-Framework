@@ -12,6 +12,7 @@ from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
 from .controllers.heal import SelfHealingFramework
 import json
+from datetime import datetime
 from django.db.models import Sum
 
 User = get_user_model()  # Get the custom user model
@@ -37,28 +38,6 @@ class LoginView(TokenObtainPairView):
 def get_user(self):
     users = User.objects.all() 
     return Response(UserSerializer(users,many=True).data)
-
-# @api_view(['POST'])
-# def documents(request):
-#     data = request.data
-#     processor = MappingProcessor()
-#     project_id = data.get('project_id')
-#     bdd_files = []
-#     test_script_files = {}
-#     for key in request.FILES:
-#         if key.startswith('bdd_'):
-#             bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
-#         elif key.startswith('test_script_'):
-#             test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
-            
-        
-#     outputs = processor.process_all_features(bdd_files,test_script_files)
-#     for output in outputs:
-#         Scenarios.objects.create(
-#                 project_id=project_id, 
-#                 mapping_file=output
-#             )
-#     return Response("Added Successfully")
 
 @api_view(['POST'])
 def documents(request):
@@ -230,68 +209,136 @@ def get_projects(request):
 
 @api_view(['POST'])
 def execute_tests(request):
+    """
+    Execute tests endpoint with full healing report compatibility.
+    Returns standardized response for frontend consumption.
+    """
+    # Request validation
     data = request.data
     project_id = data.get('project_id')
-    execution_name = data.get('execution_name', 'Default Execution')  # Default if not provided
+    execution_name = data.get('execution_name', 'Default Execution')
 
-    # Validate project_id
     if not project_id:
-        return Response({"error": "project_id is required"}, status=400)
-
-    # Create a new execution entry
-    execution = Execution.objects.create(
-        execution_name=execution_name,
-        project_id=project_id
-    )
+        return Response({
+            "success": False,
+            "message": "project_id is required",
+            "healed_elements": [],
+            "broken_elements": [],
+            "metrics": {
+                "total_scenarios": 0,
+                "healed_count": 0,
+                "broken_count": 0
+            }
+        }, status=400)
 
     try:
-        # Retrieve scenarios for the project
-        scenarios = Scenarios.objects.get(project_id=project_id)
-        mapping = scenarios.mapping_file
-        print("Mapping Data:", mapping)
-        header = mapping[0]
-        result = [dict(zip(header, row)) for row in mapping[1:]]
-        framework = SelfHealingFramework(result)
+        # Create execution record
+        execution = Execution.objects.create(
+            execution_name=execution_name,
+            project_id=project_id,
+        )
 
-        # Execute tests using the framework
-        framework = SelfHealingFramework(result)
-        framework.start_browser()
+        # Retrieve scenarios
         try:
+            scenarios = Scenarios.objects.get(project_id=project_id)
+            mapping = scenarios.mapping_file
+            header = mapping[0]
+            test_steps = [dict(zip(header, row)) for row in mapping[1:]]
+            
+            # Count scenarios (steps starting with "When")
+            scenario_count = sum(1 for row in test_steps if row.get("Step", "").strip().startswith("When"))
+        except Scenarios.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Scenarios not found for this project",
+                "healed_elements": [],
+                "broken_elements": [],
+                "metrics": {
+                    "total_scenarios": 0,
+                    "healed_count": 0,
+                    "broken_count": 0
+                }
+            }, status=404)
+
+        # Initialize and execute framework
+        framework = SelfHealingFramework(test_steps)
+        framework.scenario_count = scenario_count  # Make sure your framework can store this
+        
+        try:
+            framework.start_browser()
             framework.execute_all_steps(delay=3.5)
-            report = framework.report()
+            
+            # Get standardized report
+            report = framework.get_healing_report()
+            
+            # Store healed elements in database
+            for element in report['healed_elements']:
+                HealedElements.objects.create(
+                    execution=execution,
+                    past_element_attribute=element['original_element_id'],
+                    new_element_attribute=element['new_strategies'].get('id', ''),
+                    label=True,
+                    created_at=element.get('timestamp'),
+                    
+                )
 
-            # Parse the report
-            report_data = json.loads(report) if isinstance(report, str) else report
-
-            number_of_healed_elements = 0
-            if isinstance(report_data, dict) and "message" not in report_data:
-                # Healing occurred; store each healed element
-                for old_id, details in report_data.items():
-                    HealedElements.objects.create(
-                        execution=execution,
-                        past_element_attribute=old_id,
-                        new_element_attribute=details['new_strategies']['id'],
-                        label=True  # Indicates healing was successful
-                    )
-                number_of_healed_elements = len(report_data)
-
-            # Number of scenarios is the number of rows in the mapping file
-            number_of_scenarios = sum(1 for row in result if row["Step"].strip().startswith("When"))
             # Store metrics
             Metrics.objects.create(
                 execution=execution,
-                number_of_scenarios=number_of_scenarios,
-                number_of_healed_elements=number_of_healed_elements
+                number_of_scenarios=report['metrics']['total_scenarios'],
+                number_of_healed_elements=report['metrics']['healed_count'],
             )
 
-            return Response({"message": report, "success": True}, status=200)
+            # Finalize execution record
+            execution.status = 'COMPLETED' if report['success'] else 'COMPLETED_WITH_ERRORS'
+            execution.save()
+
+            # Return standardized response
+            return Response({
+                "success": report['success'],
+                "message": report.get('message', 'Execution completed'),
+                "healed_elements": report['healed_elements'],
+                "broken_elements": report['broken_elements'],
+                "metrics": report['metrics']
+            })
+
+        except Exception as e:
+            # Framework execution failed
+            execution.status = 'FAILED'
+            execution.error_message = str(e)
+            execution.save()
+            
+            return Response({
+                "success": False,
+                "message": f"Test execution failed: {str(e)}",
+                "healed_elements": [],
+                "broken_elements": [],
+                "metrics": {
+                    "total_scenarios": scenario_count,
+                    "healed_count": 0,
+                    "broken_count": 0
+                }
+            }, status=500)
+
         finally:
-            framework.close()
-    except Scenarios.DoesNotExist:
-        return Response({"error": "Scenarios not found for this project"}, status=404)
+            # Ensure browser is closed
+            if hasattr(framework, 'close'):
+                framework.close()
+
     except Exception as e:
-        return Response({"error": str(e), "success": False}, status=500)
-        
+        # Top-level failure (setup, etc.)
+        return Response({
+            "success": False,
+            "message": f"Execution setup failed: {str(e)}",
+            "healed_elements": [],
+            "broken_elements": [],
+            "metrics": {
+                "total_scenarios": 0,
+                "healed_count": 0,
+                "broken_count": 0
+            }
+        }, status=500)
+
 @api_view(['GET'])
 def get_metrics(request, project_id):
     metrics = Metrics.objects.filter(execution__project_id=project_id)
