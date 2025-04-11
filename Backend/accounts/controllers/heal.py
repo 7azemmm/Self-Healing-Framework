@@ -13,6 +13,7 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer, util
 from symspellpy import SymSpell
+import os
 
 
 class RLHealingAgent:
@@ -169,14 +170,15 @@ class SelfHealingFramework:
         self.element_locator = ElementLocator(self.driver)
         self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
         self.action_executor = ActionExecutor(self.driver)
+        self.broken_elements = {}  # Added for the new get_healing_report function
 
     def execute_all_steps(self, delay=1.5):
         """Automatically execute all BDD steps from the CSV."""
         for bdd_step, element_info in self.mappings.items():
             current_url = self.driver.current_url
             if current_url != element_info['Page']:
-                time.sleep(delay)
                 self.driver.get(element_info['Page'])
+                time.sleep(delay)
             action, value = self._determine_action(bdd_step)
             try:
                 element = self.find_element(bdd_step)
@@ -318,12 +320,70 @@ class SelfHealingFramework:
         """Record failed element location with a screenshot."""
         screenshot_path = f"screenshots/failure_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.driver.save_screenshot(screenshot_path)
+        self.broken_elements[element_info['ID']] = {
+            'timestamp': datetime.now().isoformat(),
+            'bdd_step': bdd_step,
+            'original_strategies': element_info['locator_strategies'].copy(),
+            'screenshot_path': screenshot_path,
+            'note': "This element was not found in the latest BDD mapping and is broken."
+        }
 
     def get_healing_report(self):
-        """Generate report of all healing actions."""
-        if not self.healing_history:
-            return {"message": "No changes detected. The script ran smoothly without any issues."}
-        return json.dumps(self.healing_history, indent=2)
+        """Generate report of all healing actions and broken elements."""
+        if not self.healing_history and not self.broken_elements:
+            return json.dumps({
+                "message": "No changes detected. The script ran smoothly without any issues."
+            }, indent=2)
+        
+        report = {
+            "healed_elements": [],
+            "broken_elements": []
+        }
+        
+        # Add healed elements
+        for element_id, details in self.healing_history.items():
+            report["healed_elements"].append({
+                "original_element_id": element_id,
+                "timestamp": details["timestamp"],
+                "original_strategies": details["original_strategies"],
+                "new_strategies": details["new_strategies"],
+                "matched_attributes": details["matched_attributes"],
+                "note": details["note"]
+            })
+        
+        # Add broken elements
+        for element_id, details in self.broken_elements.items():
+            report["broken_elements"].append({
+                "element_id": element_id,
+                "timestamp": details["timestamp"],
+                "bdd_step": details["bdd_step"],
+                "original_strategies": details["original_strategies"],
+                "screenshot_path": details["screenshot_path"],
+                "note": details["note"]
+            })
+        
+        return json.dumps(report, indent=2)
+
+    def save_report(self, filename="reports.json"):
+        """Save healing report to a file."""
+        # Create screenshots directory if it doesn't exist
+        screenshots_dir = "screenshots"
+        if not os.path.exists(screenshots_dir):
+            os.makedirs(screenshots_dir)
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = os.path.dirname(filename)
+        if reports_dir and not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+        
+        # Create a more comprehensive report
+        report = self.get_healing_report()
+        self.logger.info(f"Healing history: {len(self.healing_history)} healed elements")
+        self.logger.info(f"Broken elements: {len(self.broken_elements)} elements")
+        
+        with open(filename, "w", encoding="utf-8") as report_file:
+            report_file.write(report)
+            self.logger.info(f"Healing report saved to {filename}")
 
     def report(self):
         """Save healing report to a file."""
