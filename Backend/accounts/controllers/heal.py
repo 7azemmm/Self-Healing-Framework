@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer, util
 from symspellpy import SymSpell
 import os
+import os
 
 
 class RLHealingAgent:
@@ -322,6 +323,13 @@ class SelfHealingFramework:
         """Record failed element location with a screenshot."""
         screenshot_path = f"screenshots/failure_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         self.driver.save_screenshot(screenshot_path)
+        self.broken_elements[element_info['ID']] = {
+            'timestamp': datetime.now().isoformat(),
+            'bdd_step': bdd_step,
+            'original_strategies': element_info['locator_strategies'].copy(),
+            'screenshot_path': screenshot_path,
+            'note': "This element was not found in the latest BDD mapping and is broken."
+        }
         self.broken_elements[element_info['ID']] = {
             'timestamp': datetime.now().isoformat(),
             'bdd_step': bdd_step,

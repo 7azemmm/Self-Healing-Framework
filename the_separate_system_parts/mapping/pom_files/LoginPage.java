@@ -10,7 +10,7 @@ import org.testng.Assert;
 import java.time.Duration;
 
 public class LoginPage {
-    @FindBy(name = "email")
+    @FindBy(id = "email")
     WebElement emailInput;
     
     @FindBy(id = "psw-1234")

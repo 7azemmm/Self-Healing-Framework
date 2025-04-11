@@ -113,11 +113,7 @@ const Sidebar = () => {
 
         {/* Help Section */}
         <NavSection label="Help & Support">
-          <NavItem
-            icon={FiSettings}
-            label="Settings"
-            href="/settings"
-          />
+         
           <NavItem
             icon={FiBookOpen}
             label="Documentation"

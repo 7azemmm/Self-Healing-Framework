@@ -6,7 +6,6 @@ Scenario: User Registration and Product Purchase
   And the user select gender "Male"
   And the user click the "Register" button
   Then the user should see the dashboard page
-  When the user click the "Shop Now" button
   And the user select the category "Electronics"
   And the user click the "Add to Cart" button
   And the user click the "Proceed to Checkout" button

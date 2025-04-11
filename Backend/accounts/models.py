@@ -88,9 +88,15 @@ class Metrics(models.Model):
 class HealedElements(models.Model):
     healed_element_id = models.AutoField(primary_key=True)
     execution = models.ForeignKey(Execution, on_delete=models.CASCADE, null=False, related_name='healed_elements')
+
+    # Old strategies
     past_element_attribute = models.CharField(max_length=60, null=False)
+    past_css_selector = models.TextField(null=True, blank=True)
+    past_xpath_absolute = models.TextField(null=True, blank=True)
+
+    # New strategies
     new_element_attribute = models.CharField(max_length=60, null=False)
-    label = models.BooleanField(default=True)
+    label = models.BooleanField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

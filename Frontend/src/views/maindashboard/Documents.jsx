@@ -32,6 +32,34 @@ const Documents = () => {
   const [bddFiles, setBddFiles] = useState([]);
   const [testScriptFiles, setTestScriptFiles] = useState([]);
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 mb 
+
+  // function to validate file sizes
+  const validateFiles = (files, toast) => {
+    const validFiles = [];
+    const oversizedFiles = [];
+
+    Array.from(files).forEach((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        oversizedFiles.push(file.name);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "File Size Exceeded",
+        description: `The following files exceed the 10 MB limit: ${oversizedFiles.join(", ")}`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+
+    return validFiles;
+  };
+
   // Fetch projects from the backend
   useEffect(() => {
     const fetchProjects = async () => {
@@ -231,11 +259,7 @@ const Documents = () => {
             {/* Upload Section */}
             <Card className="content-card" mb={6}>
               <CardHeader>
-                <Text
-                  fontSize="lg"
-                  fontWeight="semibold"
-                  color="#2d3748"
-                >
+                <Text fontSize="lg" fontWeight="semibold" color="#2d3748">
                   Upload Documents
                 </Text>
               </CardHeader>
@@ -250,7 +274,7 @@ const Documents = () => {
                     _hover={{ borderColor: "#3182ce" }}
                     _focus={{
                       borderColor: "#3182ce",
-                      boxShadow: "0 0 0 1px #3182ce"
+                      boxShadow: "0 0 0 1px #3182ce",
                     }}
                   >
                     {projects.map((project) => (
@@ -260,80 +284,79 @@ const Documents = () => {
                     ))}
                   </Select>
 
-         {/* BDD Files Upload */}
-<Box>
-  <Text color="#4a5568" mb={2} fontWeight="medium">
-    BDD Files
-  </Text>
-  <label>
-    <Box className="file-upload-area" position="relative">
-      <VStack spacing={2} align="center">
-        <FaFileUpload size={24} color="#3182ce" />
-        <Text color="#4a5568" fontSize="sm">
-          {bddFiles.length > 0
-            ? `${bddFiles.length} file(s) selected`
-            : "Click here to upload .feature files"}
-        </Text>
-      </VStack>
-      <Input
-        type="file"
-        accept=".feature"
-        onChange={(e) => setBddFiles(Array.from(e.target.files))}
-        multiple
-        position="absolute"
-        top="0"
-        left="0"
-        width="100%"
-        height="100%"
-        opacity="0"
-        cursor="pointer"
-      />
-    </Box>
-  </label>
-  {bddFiles.length > 0 && (
-    <Text fontSize="sm" color="#3182ce" mt={2}>
-      {bddFiles.map(file => file.name).join(", ")}
-    </Text>
-  )}
-</Box>
+                  {/* BDD Files Upload */}
+                  <Box>
+                    <Text color="#4a5568" mb={2} fontWeight="medium">
+                      BDD Files
+                    </Text>
+                    <label>
+                      <Box className="file-upload-area" position="relative">
+                        <VStack spacing={2} align="center">
+                          <FaFileUpload size={24} color="#3182ce" />
+                          <Text color="#4a5568" fontSize="sm">
+                            {bddFiles.length > 0
+                              ? `${bddFiles.length} file(s) selected`
+                              : "Click here to upload .feature files"}
+                          </Text>
+                        </VStack>
+                        <Input
+                          type="file"
+                          accept=".feature"
+                          onChange={(e) => setBddFiles(validateFiles(e.target.files, toast))}
+                          multiple
+                          position="absolute"
+                          top="0"
+                          left="0"
+                          width="100%"
+                          height="100%"
+                          opacity="0"
+                          cursor="pointer"
+                        />
+                      </Box>
+                    </label>
+                    {bddFiles.length > 0 && (
+                      <Text fontSize="sm" color="#3182ce" mt={2}>
+                        {bddFiles.map((file) => file.name).join(", ")}
+                      </Text>
+                    )}
+                  </Box>
 
-{/* Test Script Files Upload */}
-<Box>
-  <Text color="#4a5568" mb={2} fontWeight="medium">
-    Test Script Files
-  </Text>
-  <label>
-    <Box className="file-upload-area" position="relative">
-      <VStack spacing={2} align="center">
-        <FaFileUpload size={24} color="#3182ce" />
-        <Text color="#4a5568" fontSize="sm">
-          {testScriptFiles.length > 0
-            ? `${testScriptFiles.length} file(s) selected`
-            : "Click here to upload .java or .py files"}
-        </Text>
-      </VStack>
-      <Input
-        type="file"
-        accept=".java,.py"
-        onChange={(e) => setTestScriptFiles(Array.from(e.target.files))}
-        multiple
-        position="absolute"
-        top="0"
-        left="0"
-        width="100%"
-        height="100%"
-        opacity="0"
-        cursor="pointer"
-      />
-    </Box>
-  </label>
-  {testScriptFiles.length > 0 && (
-    <Text fontSize="sm" color="#3182ce" mt={2}>
-      {testScriptFiles.map(file => file.name).join(", ")}
-    </Text>
-  )}
-</Box>
-
+                  {/* Test Script Files Upload */}
+                  <Box>
+                    <Text color="#4a5568" mb={2} fontWeight="medium">
+                      Test Script Files
+                    </Text>
+                    <label>
+                      <Box className="file-upload-area" position="relative">
+                        <VStack spacing={2} align="center">
+                          <FaFileUpload size={24} color="#3182ce" />
+                          <Text color="#4a5568" fontSize="sm">
+                            {testScriptFiles.length > 0
+                              ? `${testScriptFiles.length} file(s) selected`
+                              : "Click here to upload .java or .py files"}
+                          </Text>
+                        </VStack>
+                        <Input
+                          type="file"
+                          accept=".java,.py"
+                          onChange={(e) => setTestScriptFiles(validateFiles(e.target.files, toast))}
+                          multiple
+                          position="absolute"
+                          top="0"
+                          left="0"
+                          width="100%"
+                          height="100%"
+                          opacity="0"
+                          cursor="pointer"
+                        />
+                      </Box>
+                    </label>
+                    {testScriptFiles.length > 0 && (
+                      <Text fontSize="sm" color="#3182ce" mt={2}>
+                        {testScriptFiles.map((file) => file.name).join(", ")}
+                      </Text>
+                    )}
+                  </Box>
 
                   <Button
                     leftIcon={<FaUpload />}
@@ -352,11 +375,7 @@ const Documents = () => {
             {/* Uploaded Files Table */}
             <Card className="content-card">
               <CardHeader>
-                <Text
-                  fontSize="lg"
-                  fontWeight="semibold"
-                  color="#2d3748"
-                >
+                <Text fontSize="lg" fontWeight="semibold" color="#2d3748">
                   Uploaded Files
                 </Text>
               </CardHeader>
@@ -422,7 +441,3 @@ const Documents = () => {
 };
 
 export default Documents;
-
-
-
-

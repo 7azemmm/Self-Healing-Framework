@@ -217,6 +217,7 @@ def execute_tests(request):
     data = request.data
     project_id = data.get('project_id')
     execution_name = data.get('execution_name', 'Default Execution')
+    execution_name = data.get('execution_name', 'Default Execution')
 
     if not project_id:
         return Response({
