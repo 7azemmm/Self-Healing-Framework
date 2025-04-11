@@ -91,9 +91,7 @@ class HealedElements(models.Model):
 
     # Old strategies
     past_element_attribute = models.CharField(max_length=60, null=False)
-    past_css_selector = models.TextField(null=True, blank=True)
-    past_xpath_absolute = models.TextField(null=True, blank=True)
-
+    
     # New strategies
     new_element_attribute = models.CharField(max_length=60, null=False)
     label = models.BooleanField(null=False)

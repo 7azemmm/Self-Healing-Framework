@@ -193,10 +193,11 @@ class SelfHealingFramework:
     def _determine_action(self, bdd_step: str) -> tuple:
         """Determine the action and value from the BDD step description."""
         bdd_step_lower = bdd_step.lower()
+        
         if "click" in bdd_step_lower:
             return "click", None
         elif "enter" in bdd_step_lower:
-            match = re.search(r'enter\s+.*?"{1,3}([^"]+)"{1,3}', bdd_step_lower.lower())
+            match = re.search(r'enter(?:s|ed)?\s+(?:.*?\s+)?["\']([^"\'\\]*(?:\\.[^"\'\\]*)*)["\']', bdd_step_lower)
             value = match.group(1) if match else "default value"
             return "input", value
         elif "verify" in bdd_step_lower or "redirected" in bdd_step_lower:
@@ -216,6 +217,7 @@ class SelfHealingFramework:
             match = re.search(r"choose (.+)", bdd_step_lower)
             value = match.group(1) if match else "default radio option"
             return "radio", value
+        
         return None, None
 
     def start_browser(self):
