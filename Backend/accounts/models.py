@@ -60,6 +60,14 @@ class Scenarios(models.Model):
     scenario_id = models.AutoField(primary_key=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='scenarios')
     mapping_file = models.JSONField()
+    execution_sequence = models.ForeignKey(
+        'ExecutionSequence',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scenarios'
+    )
+    order = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -104,3 +112,17 @@ class HealedElements(models.Model):
 
     def __str__(self):
         return f"Healed Element {self.healed_element_id} - {self.execution.execution_name}"
+
+class ExecutionSequence(models.Model):
+    execution_sequence_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, null=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='execution_sequences')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'execution_sequence'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
