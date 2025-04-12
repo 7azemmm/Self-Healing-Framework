@@ -11,6 +11,7 @@ import {
   CardBody,
   VStack,
   Icon,
+  useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { signup } from '../../services/auth/authService';
@@ -21,14 +22,31 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = await signup(fullName, email, password);
+      toast({
+        title: "Account created successfully",
+        description: "You can now log in with your credentials",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
       console.log('Signup successful:', data);
       navigate('/login');
     } catch (error) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "Please check your information and try again",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
       console.error('Signup failed:', error);
     }
   };

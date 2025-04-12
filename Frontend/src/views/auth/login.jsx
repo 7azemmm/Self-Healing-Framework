@@ -12,6 +12,7 @@ import {
   Card,
   CardBody,
   VStack,
+  useToast,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { login } from '../../services/auth/authService';
@@ -21,14 +22,31 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = await login(email, password);
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
       console.log('Login successful:', data);
       navigate('/dashboard');
     } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
       console.error('Login failed:', error);
     }
   };

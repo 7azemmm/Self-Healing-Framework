@@ -1,17 +1,33 @@
-import { Box, VStack, Text, Icon, Link, Divider, Tooltip } from "@chakra-ui/react";
+import { Box, VStack, Text, Icon, Link, Divider, Tooltip, useToast } from "@chakra-ui/react";
 import {
   FiGrid,
   FiFolder,
   FiPlay,
-  FiSettings,
   FiHelpCircle,
   FiLogOut,
   FiPlusCircle,
   FiBookOpen
 } from "react-icons/fi";
 import LogoImage from "../../assets/images/testing.png"
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top",
+    });
+    navigate('/');
+  };
+
   return (
     <Box
       w={{ base: "60px", md: "240px" }}
@@ -130,12 +146,39 @@ const Sidebar = () => {
       {/* Logout Section */}
       <Box mt={6} px={4}>
         <Divider mb={4} borderColor="whiteAlpha.200" />
-        <NavItem
-          icon={FiLogOut}
-          label="Log Out"
-          href="/logout"
+        <Box
+          onClick={handleLogout}
+          display="flex"
+          alignItems="center"
+          px={4}
+          py={2}
+          mx={2}
+          borderRadius="md"
+          cursor="pointer"
           color="red.300"
-        />
+          transition="all 0.2s"
+          _hover={{
+            bg: 'whiteAlpha.200',
+            transform: 'translateX(2px)',
+          }}
+          role="group"
+        >
+          <Icon
+            as={FiLogOut}
+            boxSize={5}
+            color="red.300"
+            _groupHover={{ color: 'white' }}
+          />
+          <Text
+            ml={3}
+            fontSize="sm"
+            fontWeight="medium"
+            display={{ base: "none", md: "block" }}
+            _groupHover={{ color: 'white' }}
+          >
+            Log Out
+          </Text>
+        </Box>
       </Box>
     </Box>
   );
