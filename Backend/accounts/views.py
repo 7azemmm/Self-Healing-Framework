@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model  # Import get_user_model
 from .serializers import UserSerializer, CustomTokenObtainPairSerializer,ProjectSerializer,ScenarioSerializer,MetricsSerializer,ProjectMetricsSerializer
 from .controllers.mapping import MappingProcessor
-from .models import Project,Scenarios,Metrics,Execution,HealedElements
+from .models import Project,Scenarios,Metrics,Execution,HealedElements,ExecutionSequence,SequenceScenario
 from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
@@ -39,47 +39,101 @@ def get_user(self):
     users = User.objects.all() 
     return Response(UserSerializer(users,many=True).data)
 
+# @api_view(['POST'])
+# def documents(request):
+#     data = request.data
+#     processor = MappingProcessor()
+#     project_id = data.get('project_id')
+#     bdd_files = []
+#     test_script_files = {}
+
+#     # Process uploaded files
+#     for key in request.FILES:
+#         if key.startswith('bdd_'):
+#             bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
+#         elif key.startswith('test_script_'):
+#             test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
+
+#     # Process BDD and test script files
+#     outputs = processor.process_all_features(bdd_files, test_script_files)
+
+
+#     # Save the output to the database
+#     for output in outputs:
+#         # Use get_or_create to ensure that we don't create duplicate entries
+#         scenario_obj,created= Scenarios.objects.get_or_create(
+#             project_id=project_id,
+#             defaults={"mapping_file": []}
+#         )
+
+#         # If the scenario already exists, we add the new output without causing issues
+#         print("creeeeeeeeeeeeeeeeeeeeeeeeee")
+#         print(created)
+#         if not created:
+#             existing_mapping = scenario_obj.mapping_file
+#             if isinstance(existing_mapping, list):
+#                 existing_mapping.extend(output[1:])  # Append new output to the list
+#         else:
+#             existing_mapping = output  # Convert to a list if it isn't
+#         scenario_obj.mapping_file = existing_mapping
+#         print(output)
+#         scenario_obj.save()
+
+#     return Response("Added Successfully")
+
+
 @api_view(['POST'])
 def documents(request):
     data = request.data
     processor = MappingProcessor()
+
     project_id = data.get('project_id')
+    execution_sequence_number = data.get('execution_sequence_number')
+
+    if not project_id or not execution_sequence_number:
+        return Response({"error": "Missing project_id or execution_sequence_number"}, status=400)
+
     bdd_files = []
     test_script_files = {}
 
-    # Process uploaded files
-    for key in request.FILES:
+    # Process uploaded files in order
+    for key in request.FILES:  # Sort to maintain upload order
+        file = request.FILES[key]
+        content = file.read().decode('utf-8')
         if key.startswith('bdd_'):
-            bdd_files.append((request.FILES[key].name, request.FILES.get(key).read().decode('utf-8')))
+            bdd_files.append((file.name, content))
         elif key.startswith('test_script_'):
-            test_script_files[request.FILES[key].name] = request.FILES.get(key).read().decode('utf-8')
+            test_script_files[file.name] = content
 
-    # Process BDD and test script files
+    # Create ExecutionSequence
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Invalid project_id"}, status=404)
+
+    execution_sequence = ExecutionSequence.objects.create(
+        number=execution_sequence_number,
+        project=project
+    )
+
+    # Process BDD and test script mapping
     outputs = processor.process_all_features(bdd_files, test_script_files)
 
-
-    # Save the output to the database
-    for output in outputs:
-        # Use get_or_create to ensure that we don't create duplicate entries
-        scenario_obj,created= Scenarios.objects.get_or_create(
-            project_id=project_id,
-            defaults={"mapping_file": []}
+    for idx, output in enumerate(outputs):
+        # Save Scenario
+        scenario_obj = Scenarios.objects.create(
+            project=project,
+            mapping_file=output
         )
 
-        # If the scenario already exists, we add the new output without causing issues
-        print("creeeeeeeeeeeeeeeeeeeeeeeeee")
-        print(created)
-        if not created:
-            existing_mapping = scenario_obj.mapping_file
-            if isinstance(existing_mapping, list):
-                existing_mapping.extend(output[1:])  # Append new output to the list
-        else:
-            existing_mapping = output  # Convert to a list if it isn't
-        scenario_obj.mapping_file = existing_mapping
-        print(output)
-        scenario_obj.save()
+        # Add to SequenceScenario with order preserved
+        SequenceScenario.objects.create(
+            execution_sequence=execution_sequence,
+            scenario=scenario_obj,
+            order=idx + 1  # 1-based index
+        )
 
-    return Response("Added Successfully")
+    return Response({"message": "Added Successfully", "execution_sequence_id": execution_sequence.execution_sequence_id}, status=201)
 
 
 
