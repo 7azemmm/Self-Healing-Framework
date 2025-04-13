@@ -15,6 +15,11 @@ import json
 from datetime import datetime
 from django.db.models import Sum
 
+from . import models
+from django.db.models import F
+
+
+
 User = get_user_model()  # Get the custom user model
 
 def get_attribute_simple(attributes, key):
@@ -156,12 +161,76 @@ def healing(request):
         framework.close()
 
 
+# @api_view(['POST'])
+# def scenario(request):
+#     data = request.data
+#     bdd = data.get('bdd')
+#     links = data.get('links')
+#     project_id = data.get('project_id')
+
+#     print("Starting the script...")
+#     print("Processing BDD scenario...")
+#     bdd_scenario = process_bdd(bdd)
+#     print("BDD scenario processed.")
+
+#     print("Processing HTML pages...")
+#     html_pages = process_html(links.split("\n"))
+#     print("HTML pages processed.")
+
+#     print("Performing mapping...")
+#     mappings = map_bdd_to_html(bdd_scenario, html_pages)
+#     print("Mapping completed.")
+
+#     print("Writing results to CSV...")
+#     response = [[
+#         "Step", "Page", "ID", "Class", "Name", "Value",
+#         "XPath (Absolute)", "XPath (Relative)", "CSS Selector"
+#     ]]
+#     for match in mappings:
+#         response.append([
+#             match["step"],
+#             match["page"],
+#             get_attribute_simple(match["element"]["attributes"], "id"),
+#             get_attribute_simple(match["element"]["attributes"], "class"),
+#             get_attribute_simple(match["element"]["attributes"], "name"),
+#             get_attribute_simple(match["element"]["attributes"], "value"),
+#             get_attribute_simple(match["element"]["attributes"], "xpath_absolute"),
+#             get_attribute_simple(match["element"]["attributes"], "xpath_relative"),
+#             get_attribute_simple(match["element"]["attributes"], "css_selector"),
+#         ])
+    
+   
+#     scenario_obj, created = Scenarios.objects.get_or_create(project_id=project_id ,  defaults={"mapping_file": []})
+
+   
+#     if not created:
+#         existing_mapping = scenario_obj.mapping_file
+#         if isinstance(existing_mapping, list): 
+#             existing_mapping.extend(response[1:])  
+#         else:
+#             existing_mapping = response  
+
+#         scenario_obj.mapping_file = existing_mapping
+#         scenario_obj.save()
+#     else:
+#         scenario_obj.mapping_file = response
+#         scenario_obj.save()
+
+#     return Response("Added Successfully")
+
+
 @api_view(['POST'])
 def scenario(request):
     data = request.data
     bdd = data.get('bdd')
     links = data.get('links')
     project_id = data.get('project_id')
+    execution_sequence_number = data.get('execution_sequence_number')
+    order = data.get('order')
+
+    # Validate basic fields
+    if not all([bdd, links, project_id]):
+        return Response({"error": "Missing bdd, links, or project_id"}, status=400)
 
     print("Starting the script...")
     print("Processing BDD scenario...")
@@ -169,14 +238,15 @@ def scenario(request):
     print("BDD scenario processed.")
 
     print("Processing HTML pages...")
-    html_pages = process_html(links.split("\n"))
+    clean_links = [link.strip() for link in links.split("\n") if link.strip()]
+    html_pages = process_html(clean_links)
     print("HTML pages processed.")
 
     print("Performing mapping...")
     mappings = map_bdd_to_html(bdd_scenario, html_pages)
     print("Mapping completed.")
 
-    print("Writing results to CSV...")
+    print("Writing results to CSV format...")
     response = [[
         "Step", "Page", "ID", "Class", "Name", "Value",
         "XPath (Absolute)", "XPath (Relative)", "CSS Selector"
@@ -193,25 +263,64 @@ def scenario(request):
             get_attribute_simple(match["element"]["attributes"], "xpath_relative"),
             get_attribute_simple(match["element"]["attributes"], "css_selector"),
         ])
-    
-   
-    scenario_obj, created = Scenarios.objects.get_or_create(project_id=project_id ,  defaults={"mapping_file": []})
 
-   
-    if not created:
-        existing_mapping = scenario_obj.mapping_file
-        if isinstance(existing_mapping, list): 
-            existing_mapping.extend(response[1:])  
-        else:
-            existing_mapping = response  
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Invalid project_id"}, status=404)
 
-        scenario_obj.mapping_file = existing_mapping
-        scenario_obj.save()
+    # Get or create the execution sequence
+    if execution_sequence_number:
+        execution_sequence, _ = ExecutionSequence.objects.get_or_create(
+            project=project,
+            number=execution_sequence_number
+        )
     else:
-        scenario_obj.mapping_file = response
-        scenario_obj.save()
+        # Get the latest sequence number and add 1
+        last_sequence = ExecutionSequence.objects.filter(project=project).order_by('-number').first()
+        next_sequence_number = last_sequence.number + 1 if last_sequence else 1
+        execution_sequence = ExecutionSequence.objects.create(
+            project=project,
+            number=next_sequence_number
+        )
 
-    return Response("Added Successfully")
+    # Create Scenario object
+    scenario_obj = Scenarios.objects.create(
+        project=project,
+        mapping_file=response
+    )
+
+  # Determine the order and shift if necessary
+    if order:
+     order_value = int(order)
+
+    # Shift existing scenarios at or after this order
+     SequenceScenario.objects.filter(
+         execution_sequence=execution_sequence,
+         order__gte=order_value
+     ).update(order=F('order') + 1)
+
+    else:
+      last_order = SequenceScenario.objects.filter(
+         execution_sequence=execution_sequence
+      ).order_by('-order').first()
+      order_value = last_order.order + 1 if last_order else 1
+
+     # Create SequenceScenario at the correct order
+    SequenceScenario.objects.create(
+     execution_sequence=execution_sequence,
+     scenario=scenario_obj,
+     order=order_value
+    )
+
+
+    return Response({
+        "message": "Added Successfully",
+        "scenario_id": scenario_obj.scenario_id,
+        "execution_sequence_id": execution_sequence.execution_sequence_id,
+        "order": order_value
+    }, status=201)
+
 
 
 
