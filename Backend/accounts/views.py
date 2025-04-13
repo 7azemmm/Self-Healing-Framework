@@ -688,3 +688,14 @@ def get_project_metrics(request, project_id):
     }
     serializer = ProjectMetricsSerializer(data)
     return Response(serializer.data, status=200)
+
+@api_view(['GET'])
+def get_execution_sequences(request, project_id):
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Project not found"}, status=404)
+
+    execution_sequences = ExecutionSequence.objects.filter(project=project)
+    sequence_numbers = [seq.number for seq in execution_sequences]
+    return Response(sequence_numbers, status=200)

@@ -28,13 +28,14 @@ const Documents = () => {
   const toast = useToast();
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
+  const [executionSequenceNumber, setExecutionSequenceNumber] = useState("");
   const [projects, setProjects] = useState([]);
   const [bddFiles, setBddFiles] = useState([]);
   const [testScriptFiles, setTestScriptFiles] = useState([]);
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 mb 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-  // function to validate file sizes
+  // Validate file sizes and show toast for oversized files
   const validateFiles = (files, toast) => {
     const validFiles = [];
     const oversizedFiles = [];
@@ -60,7 +61,7 @@ const Documents = () => {
     return validFiles;
   };
 
-  // Fetch projects from the backend
+  // Fetch projects on component mount
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -79,11 +80,51 @@ const Documents = () => {
     fetchProjects();
   }, []);
 
+  // Fetch uploaded files for a project whenever selectedProject changes
+  useEffect(() => {
+    if (selectedProject) {
+      fetchUploadedFiles();
+    }
+  }, [selectedProject]);
+
+  // Function to fetch uploaded files (mocked endpoint)
+  const fetchUploadedFiles = async () => {
+    if (!selectedProject) return;
+
+    try {
+      // Note: This endpoint doesn't exist in the provided views.py.
+      // You'll need to implement a `/get_uploaded_files/<project_id>/` endpoint in the backend.
+      const response = await axios.get(`/get_uploaded_files/${selectedProject}/`);
+      setUploadedFiles(response.data || []);
+    } catch (error) {
+      toast({
+        title: "Error fetching uploaded files",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setUploadedFiles([]);
+    }
+  };
+
+  // Handle file upload
   const handleUpload = async () => {
     if (!selectedProject) {
       toast({
         title: "No project selected.",
         description: "Please select a project before uploading files.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!executionSequenceNumber) {
+      toast({
+        title: "No sequence number provided.",
+        description: "Please provide an execution sequence number.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -110,6 +151,7 @@ const Documents = () => {
       formData.append(`test_script_${index}`, file);
     });
     formData.append("project_id", selectedProject);
+    formData.append("execution_sequence_number", executionSequenceNumber);
 
     try {
       const response = await axios.post("/documents/", formData, {
@@ -117,20 +159,29 @@ const Documents = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      setUploadedFiles([...uploadedFiles, ...response.data]);
+
+      // Since response.data is not a list of files, handle the success message
       toast({
         title: "Files uploaded successfully.",
-        description: "All files have been uploaded.",
+        description: response.data.message || "All files have been uploaded.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
+      // Fetch the updated list of uploaded files
+      await fetchUploadedFiles();
+
+      // Reset form
       setBddFiles([]);
       setTestScriptFiles([]);
+      setExecutionSequenceNumber("");
     } catch (error) {
+      const errorMessage =
+        error.response?.data?.error || error.response?.data?.message || error.message;
       toast({
         title: "Upload failed.",
-        description: error.message,
+        description: errorMessage,
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -138,16 +189,18 @@ const Documents = () => {
     }
   };
 
+  // Handle file deletion
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/delete_document/${id}/`);
-      setUploadedFiles(uploadedFiles.filter((file) => file.id !== id));
       toast({
         title: "File deleted.",
         status: "info",
         duration: 3000,
         isClosable: true,
       });
+      // Refresh the uploaded files list
+      await fetchUploadedFiles();
     } catch (error) {
       toast({
         title: "Delete failed.",
@@ -159,6 +212,7 @@ const Documents = () => {
     }
   };
 
+  // Placeholder for viewing files
   const handleViewFile = (fileName) => {
     toast({
       title: `Viewing: ${fileName}`,
@@ -177,22 +231,18 @@ const Documents = () => {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
-
           .dashboard-bg {
             background: linear-gradient(to right, #f8fafc, #f1f5f9);
           }
-
           .content-card {
             background: white;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
           }
-
           .content-card:hover {
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
           }
-
           .file-upload-area {
             border: 2px dashed #e2e8f0;
             background: #f8fafc;
@@ -201,32 +251,25 @@ const Documents = () => {
             padding: 20px;
             border-radius: 8px;
           }
-
           .file-upload-area:hover {
             border-color: #3182ce;
             background: #f1f5f9;
           }
-
           .upload-button {
             transition: all 0.2s ease;
           }
-
           .upload-button:hover {
             transform: translateY(-2px);
           }
-
           .table-row {
             transition: background-color 0.2s ease;
           }
-
           .table-row:hover {
             background: #f8fafc;
           }
-
           .action-button {
             transition: all 0.2s ease;
           }
-
           .action-button:hover {
             transform: translateY(-1px);
           }
@@ -245,18 +288,10 @@ const Documents = () => {
         >
           <Navbar />
           <Box flex="1" px={8} py={6} overflowY="auto">
-            {/* Page Header */}
-            <Text
-              fontSize="2xl"
-              fontWeight="bold"
-              mb={6}
-              color="#1a365d"
-              letterSpacing="tight"
-            >
+            <Text fontSize="2xl" fontWeight="bold" mb={6} color="#1a365d" letterSpacing="tight">
               Document Management
             </Text>
 
-            {/* Upload Section */}
             <Card className="content-card" mb={6}>
               <CardHeader>
                 <Text fontSize="lg" fontWeight="semibold" color="#2d3748">
@@ -272,10 +307,7 @@ const Documents = () => {
                     bg="white"
                     border="1px solid #e2e8f0"
                     _hover={{ borderColor: "#3182ce" }}
-                    _focus={{
-                      borderColor: "#3182ce",
-                      boxShadow: "0 0 0 1px #3182ce",
-                    }}
+                    _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
                   >
                     {projects.map((project) => (
                       <option key={project.project_id} value={project.project_id}>
@@ -284,7 +316,16 @@ const Documents = () => {
                     ))}
                   </Select>
 
-                  {/* BDD Files Upload */}
+                  <Input
+                    placeholder="Execution Sequence Number"
+                    value={executionSequenceNumber}
+                    onChange={(e) => setExecutionSequenceNumber(e.target.value)}
+                    bg="white"
+                    border="1px solid #e2e8f0"
+                    _hover={{ borderColor: "#3182ce" }}
+                    _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
+                  />
+
                   <Box>
                     <Text color="#4a5568" mb={2} fontWeight="medium">
                       BDD Files
@@ -321,7 +362,6 @@ const Documents = () => {
                     )}
                   </Box>
 
-                  {/* Test Script Files Upload */}
                   <Box>
                     <Text color="#4a5568" mb={2} fontWeight="medium">
                       Test Script Files
@@ -372,7 +412,6 @@ const Documents = () => {
               </CardBody>
             </Card>
 
-            {/* Uploaded Files Table */}
             <Card className="content-card">
               <CardHeader>
                 <Text fontSize="lg" fontWeight="semibold" color="#2d3748">

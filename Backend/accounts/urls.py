@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics
+from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics,get_execution_sequences
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('execute_tests/', execute_tests, name='execute_tests'),
     path('metrics/<int:project_id>/', get_metrics, name='get_metrics'),
     path('project_metrics/<int:project_id>/', get_project_metrics, name='get_project_metrics'),
+    path('get_execution_sequences/<int:project_id>/', get_execution_sequences, name='get_execution_sequences'),  # New endpoint
 ]
