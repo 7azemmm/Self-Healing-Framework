@@ -115,7 +115,7 @@ class HealedElements(models.Model):
 
 class ExecutionSequence(models.Model):
     execution_sequence_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, null=False)
+    number = models.CharField(max_length=100, null=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='execution_sequences')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -125,4 +125,4 @@ class ExecutionSequence(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return self.name
+        return self.number
