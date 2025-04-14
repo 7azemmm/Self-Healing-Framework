@@ -697,5 +697,97 @@ def get_execution_sequences(request, project_id):
         return Response({"error": "Project not found"}, status=404)
 
     execution_sequences = ExecutionSequence.objects.filter(project=project)
+    sequence_data = [
+        {
+            "number": seq.number,
+            "execution_sequence_id": seq.execution_sequence_id
+        }
+        for seq in execution_sequences
+    ]
+    return Response(sequence_data, status=200)
+
+@api_view(['GET'])
+def get_execution_sequence_scenarios(request, project_id, execution_sequence_number):
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Project not found"}, status=404)
+
+    try:
+        execution_sequence = ExecutionSequence.objects.get(
+            project=project,
+            number=execution_sequence_number
+        )
+    except ExecutionSequence.DoesNotExist:
+        return Response({"error": "Execution sequence not found"}, status=404)
+
+    sequence_scenarios = SequenceScenario.objects.filter(
+        execution_sequence=execution_sequence
+    ).select_related('scenario').order_by('order')
+
+    scenarios = [
+        {
+            "scenario_id": seq_scenario.scenario.scenario_id,
+            "project_name": seq_scenario.scenario.project.project_name,
+            "created_at": seq_scenario.scenario.created_at.isoformat(),
+            "order": seq_scenario.order,
+            "execution_sequence_id": seq_scenario.execution_sequence.execution_sequence_id  # Include execution_sequence_id
+        }
+        for seq_scenario in sequence_scenarios
+    ]
+
+    return Response(scenarios, status=200)
+
+@api_view(['POST'])
+def update_scenario_order(request):
+    data = request.data
+    execution_sequence_id = data.get('execution_sequence_id')
+    new_order = data.get('new_order')  # List of {scenario_id, order}
+
+    if not execution_sequence_id or not new_order:
+        return Response({"error": "Missing execution_sequence_id or new_order"}, status=400)
+
+    try:
+        execution_sequence = ExecutionSequence.objects.get(
+            execution_sequence_id=execution_sequence_id
+        )
+    except ExecutionSequence.DoesNotExist:
+        return Response({"error": "Execution sequence not found"}, status=404)
+
+    # Validate new_order
+    if not isinstance(new_order, list):
+        return Response({"error": "new_order must be a list"}, status=400)
+
+    # Update the order of each scenario
+    for item in new_order:
+        scenario_id = item.get('scenario_id')
+        order = item.get('order')
+        if not scenario_id or order is None:
+            return Response({"error": "Each item in new_order must have scenario_id and order"}, status=400)
+
+        try:
+            sequence_scenario = SequenceScenario.objects.get(
+                execution_sequence=execution_sequence,
+                scenario_id=scenario_id
+            )
+            sequence_scenario.order = order
+            sequence_scenario.save()
+        except SequenceScenario.DoesNotExist:
+            return Response({"error": f"Scenario {scenario_id} not found in this execution sequence"}, status=404)
+
+    # Update the updated_at timestamp of the execution sequence
+    execution_sequence.updated_at = datetime.now()
+    execution_sequence.save()
+
+    return Response({"message": "Order updated successfully"}, status=200)
+
+@api_view(['GET'])
+def get_execution_sequences_exe(request, project_id):
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({"error": "Project not found"}, status=404)
+
+    execution_sequences = ExecutionSequence.objects.filter(project=project)
     sequence_numbers = [seq.number for seq in execution_sequences]
     return Response(sequence_numbers, status=200)

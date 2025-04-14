@@ -5,6 +5,7 @@ import Documents from './views/maindashboard/Documents.jsx';
 import Execute from './views/maindashboard/Execute.jsx';
 import AddScenario from './views/addScenario/addScenarioPage.jsx';
 import CreateProject from './views/maindashboard/CreateProject.jsx'; // Add this line
+import UpdateOrder from './views/maindashboard/UpdateOrder';
 
 const routes = [
   {
@@ -37,8 +38,12 @@ const routes = [
     component: AddScenario,
   },
   {
-    path: '/create-project', // Add this route
+    path: '/create-project', 
     component: CreateProject,
+  },
+  {
+    path: '/update-order',
+    component: UpdateOrder,
   },
 ];
 

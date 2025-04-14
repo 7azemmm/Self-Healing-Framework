@@ -127,6 +127,18 @@ const Sidebar = () => {
 
         <Divider my={4} borderColor="whiteAlpha.200" />
 
+
+         {/* update order Section */}
+         <NavSection label="Projects">
+          <NavItem
+            icon={FiPlusCircle}
+            label="Update Oreder"
+            href="/update-order"
+          />
+        </NavSection>
+
+        <Divider my={4} borderColor="whiteAlpha.200" />
+
         {/* Help Section */}
         <NavSection label="Help & Support">
          

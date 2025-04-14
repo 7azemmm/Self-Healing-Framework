@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics,get_execution_sequences
+from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics,get_execution_sequences,get_execution_sequence_scenarios,update_scenario_order,get_execution_sequences_exe
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
@@ -13,5 +13,8 @@ urlpatterns = [
     path('execute_tests/', execute_tests, name='execute_tests'),
     path('metrics/<int:project_id>/', get_metrics, name='get_metrics'),
     path('project_metrics/<int:project_id>/', get_project_metrics, name='get_project_metrics'),
-    path('get_execution_sequences/<int:project_id>/', get_execution_sequences, name='get_execution_sequences'),  # New endpoint
+    path('get_execution_sequences/<int:project_id>/', get_execution_sequences, name='get_execution_sequences'),
+    path('get_execution_sequence_scenarios/<int:project_id>/<str:execution_sequence_number>/', get_execution_sequence_scenarios, name='get_execution_sequence_scenarios'), 
+    path('update_scenario_order/', update_scenario_order, name='update_scenario_order'),
+    path('get_execution_sequences_exe/<int:project_id>/', get_execution_sequences_exe, name='get_execution_sequences_exe'),
 ]

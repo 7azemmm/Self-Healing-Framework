@@ -73,7 +73,7 @@ const Execute = () => {
     if (selectedProject) {
       const fetchExecutionSequences = async () => {
         try {
-          const response = await axios.get(`/get_execution_sequences/${selectedProject}/`);
+          const response = await axios.get(`/get_execution_sequences_exe/${selectedProject}/`);
           setExecutionSequences(response.data || []);
           setExecutionSequenceNumber(""); // Reset selection when project changes
         } catch (error) {
