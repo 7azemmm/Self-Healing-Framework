@@ -58,6 +58,7 @@ class Execution(models.Model):
 
 class Scenarios(models.Model):
     scenario_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=250, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='scenarios')
     mapping_file = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -113,9 +114,9 @@ class HealedElements(models.Model):
     def __str__(self):
         return f"Healed Element {self.healed_element_id} - {self.execution.execution_name}"
 
-class ExecutionSequence(models.Model):
-    execution_sequence_id = models.AutoField(primary_key=True)
-    number  = models.CharField(max_length=100, null=False)
+class ExecutionFlow(models.Model):
+    id = models.AutoField(primary_key=True)
+    name  = models.CharField(max_length=100, null=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='execution_sequences')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -128,16 +129,15 @@ class ExecutionSequence(models.Model):
         return self.number
     
     
-class SequenceScenario(models.Model):
-    sequence_scenario_id = models.AutoField(primary_key=True)
-    execution_sequence = models.ForeignKey(ExecutionSequence, on_delete=models.CASCADE, null=False, related_name='sequence_scenarios')
-    scenario = models.ForeignKey(Scenarios, on_delete=models.CASCADE, null=False, related_name='sequence_scenarios')
-    order = models.PositiveIntegerField(null=False)
+class ExecutionFlowSequence(models.Model):
+    scenario_sequence = models.ForeignKey(ExecutionFlow, on_delete=models.CASCADE, related_name='items')
+    scenario = models.ForeignKey(Scenarios, on_delete=models.CASCADE, related_name='in_sequences')
+    sequence = models.PositiveIntegerField(null=False)
 
     class Meta:
-        db_table = 'sequence_scenario'
-        ordering = ['order']
-        unique_together = ('execution_sequence', 'scenario')  # Prevents duplicate scenario-sequence pairs
+        db_table = 'execution_sequence_item'
+        unique_together = ('scenario_sequence', 'scenario')
+        ordering = ['sequence']
 
     def __str__(self):
-        return f"{self.execution_sequence.name} - {self.scenario.scenario_id} (Order: {self.order})"
+        return f"{self.scenario_sequence.name} - Scenario {self.scenario_id} (#{self.sequence})"

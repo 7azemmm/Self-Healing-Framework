@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Project,Scenarios,Metrics,HealedElements
+from .models import Project,Scenarios,Metrics,HealedElements,ExecutionFlow,ExecutionFlowSequence
 
 User = get_user_model()
 
@@ -39,13 +39,21 @@ class ProjectSerializer(serializers.ModelSerializer):
 class ScenarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scenarios
-        fields = '__all__'
+        fields = ['scenario_id', 'name']
 
-class MetricsSerializer(serializers.ModelSerializer):
+class ExecutionFlowSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Metrics
-        fields = ['metrics_id', 'execution', 'number_of_scenarios', 'number_of_healed_elements', 'created_at']
-        
+        model = ExecutionFlow
+        fields = ['name']
+
+class ExecutionFlowSequenceSerializer(serializers.ModelSerializer):
+    scenario_id = serializers.IntegerField(source='scenario.scenario_id')
+    scenario_name = serializers.CharField(source='scenario.name')
+
+    class Meta:
+        model = ExecutionFlowSequence
+        fields = ['sequence', 'scenario_id', 'scenario_name']
+
         
 class HealedElementsSerializer(serializers.ModelSerializer):
     execution_name = serializers.CharField(source='execution.execution_name')
