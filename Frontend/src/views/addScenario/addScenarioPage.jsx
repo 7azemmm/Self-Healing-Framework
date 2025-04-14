@@ -25,6 +25,7 @@ const AddScenario = () => {
   const [urls, setUrls] = useState("");
   const [executionSequenceNumber, setExecutionSequenceNumber] = useState(""); // State for sequence number
   const [order, setOrder] = useState(""); // State for order
+  const [scenariosName, setScenariosName] = useState(""); // New state for scenarios_name
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
@@ -81,6 +82,17 @@ const AddScenario = () => {
       return;
     }
 
+    if (!scenariosName.trim()) {
+      toast({
+        title: "Scenario Name Missing",
+        description: "Please provide a scenario name.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -90,6 +102,7 @@ const AddScenario = () => {
         links: urls,
         execution_sequence_number: executionSequenceNumber, // Include sequence number
         order: order || null, // Send null if not provided
+        scenarios_name: scenariosName, // Include scenarios_name
       });
 
       toast({
@@ -99,6 +112,13 @@ const AddScenario = () => {
         duration: 3000,
         isClosable: true,
       });
+
+      // Reset form after successful submission
+      setScenario("");
+      setUrls("");
+      setExecutionSequenceNumber("");
+      setOrder("");
+      setScenariosName("");
     } catch (error) {
       toast({
         title: "Mapping Failed",
@@ -169,6 +189,22 @@ const AddScenario = () => {
                       </option>
                     ))}
                   </Select>
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
+                    Scenario Name
+                  </Text>
+                  <Input
+                    placeholder="Enter scenario name..."
+                    value={scenariosName}
+                    onChange={(e) => setScenariosName(e.target.value)}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{ borderColor: "blue.500" }}
+                    _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                  />
                 </Box>
 
                 <Box>

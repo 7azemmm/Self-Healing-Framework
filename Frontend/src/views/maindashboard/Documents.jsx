@@ -29,6 +29,7 @@ const Documents = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [executionSequenceNumber, setExecutionSequenceNumber] = useState("");
+  const [scenariosName, setScenariosName] = useState(""); // New state for scenarios_name
   const [projects, setProjects] = useState([]);
   const [bddFiles, setBddFiles] = useState([]);
   const [testScriptFiles, setTestScriptFiles] = useState([]);
@@ -132,6 +133,17 @@ const Documents = () => {
       return;
     }
 
+    if (!scenariosName) {
+      toast({
+        title: "No scenario name provided.",
+        description: "Please provide a scenario name.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     if (bddFiles.length === 0 || testScriptFiles.length === 0) {
       toast({
         title: "Missing files.",
@@ -152,6 +164,7 @@ const Documents = () => {
     });
     formData.append("project_id", selectedProject);
     formData.append("execution_sequence_number", executionSequenceNumber);
+    formData.append("scenarios_name", scenariosName); // Add scenarios_name to formData
 
     try {
       const response = await axios.post("/documents/", formData, {
@@ -176,6 +189,7 @@ const Documents = () => {
       setBddFiles([]);
       setTestScriptFiles([]);
       setExecutionSequenceNumber("");
+      setScenariosName(""); // Reset scenarios_name
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || error.response?.data?.message || error.message;
@@ -320,6 +334,16 @@ const Documents = () => {
                     placeholder="Execution Sequence Number"
                     value={executionSequenceNumber}
                     onChange={(e) => setExecutionSequenceNumber(e.target.value)}
+                    bg="white"
+                    border="1px solid #e2e8f0"
+                    _hover={{ borderColor: "#3182ce" }}
+                    _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
+                  />
+
+                  <Input
+                    placeholder="Scenario Name"
+                    value={scenariosName}
+                    onChange={(e) => setScenariosName(e.target.value)}
                     bg="white"
                     border="1px solid #e2e8f0"
                     _hover={{ borderColor: "#3182ce" }}

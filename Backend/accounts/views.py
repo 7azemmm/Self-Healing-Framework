@@ -94,9 +94,10 @@ def documents(request):
 
     project_id = data.get('project_id')
     execution_sequence_number = data.get('execution_sequence_number')
+    scenarios_name = data.get('scenarios_name')  # New field from request
 
-    if not project_id or not execution_sequence_number:
-        return Response({"error": "Missing project_id or execution_sequence_number"}, status=400)
+    if not project_id or not execution_sequence_number or not scenarios_name:
+        return Response({"error": "Missing project_id, execution_sequence_number, or scenarios_name"}, status=400)
 
     bdd_files = []
     test_script_files = {}
@@ -128,6 +129,7 @@ def documents(request):
         # Save Scenario
         scenario_obj = Scenarios.objects.create(
             project=project,
+            scenarios_name=scenarios_name,
             mapping_file=output
         )
 
@@ -139,7 +141,6 @@ def documents(request):
         )
 
     return Response({"message": "Added Successfully", "execution_sequence_id": execution_sequence.execution_sequence_id}, status=201)
-
 
 
 
@@ -227,10 +228,11 @@ def scenario(request):
     project_id = data.get('project_id')
     execution_sequence_number = data.get('execution_sequence_number')
     order = data.get('order')
+    scenarios_name = data.get('scenarios_name')  
 
     # Validate basic fields
-    if not all([bdd, links, project_id]):
-        return Response({"error": "Missing bdd, links, or project_id"}, status=400)
+    if not all([bdd, links, project_id, scenarios_name]):
+        return Response({"error": "Missing bdd, links, project_id, or scenarios_name"}, status=400)
 
     print("Starting the script...")
     print("Processing BDD scenario...")
@@ -287,32 +289,30 @@ def scenario(request):
     # Create Scenario object
     scenario_obj = Scenarios.objects.create(
         project=project,
+        scenarios_name=scenarios_name,  # Added scenarios_name
         mapping_file=response
     )
 
-  # Determine the order and shift if necessary
+    # Determine the order and shift if necessary
     if order:
-     order_value = int(order)
-
-    # Shift existing scenarios at or after this order
-     SequenceScenario.objects.filter(
-         execution_sequence=execution_sequence,
-         order__gte=order_value
-     ).update(order=F('order') + 1)
-
+        order_value = int(order)
+        # Shift existing scenarios at or after this order
+        SequenceScenario.objects.filter(
+            execution_sequence=execution_sequence,
+            order__gte=order_value
+        ).update(order=F('order') + 1)
     else:
-      last_order = SequenceScenario.objects.filter(
-         execution_sequence=execution_sequence
-      ).order_by('-order').first()
-      order_value = last_order.order + 1 if last_order else 1
+        last_order = SequenceScenario.objects.filter(
+            execution_sequence=execution_sequence
+        ).order_by('-order').first()
+        order_value = last_order.order + 1 if last_order else 1
 
-     # Create SequenceScenario at the correct order
+    # Create SequenceScenario at the correct order
     SequenceScenario.objects.create(
-     execution_sequence=execution_sequence,
-     scenario=scenario_obj,
-     order=order_value
+        execution_sequence=execution_sequence,
+        scenario=scenario_obj,
+        order=order_value
     )
-
 
     return Response({
         "message": "Added Successfully",
@@ -320,7 +320,6 @@ def scenario(request):
         "execution_sequence_id": execution_sequence.execution_sequence_id,
         "order": order_value
     }, status=201)
-
 
 
 
@@ -728,10 +727,11 @@ def get_execution_sequence_scenarios(request, project_id, execution_sequence_num
     scenarios = [
         {
             "scenario_id": seq_scenario.scenario.scenario_id,
+            "scenarios_name": seq_scenario.scenario.scenarios_name, 
             "project_name": seq_scenario.scenario.project.project_name,
             "created_at": seq_scenario.scenario.created_at.isoformat(),
             "order": seq_scenario.order,
-            "execution_sequence_id": seq_scenario.execution_sequence.execution_sequence_id  # Include execution_sequence_id
+            "execution_sequence_id": seq_scenario.execution_sequence.execution_sequence_id
         }
         for seq_scenario in sequence_scenarios
     ]

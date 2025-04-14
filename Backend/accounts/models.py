@@ -58,6 +58,7 @@ class Execution(models.Model):
 
 class Scenarios(models.Model):
     scenario_id = models.AutoField(primary_key=True)
+    scenarios_name = models.CharField(max_length=100, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, related_name='scenarios')
     mapping_file = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
