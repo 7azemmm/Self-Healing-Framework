@@ -6,7 +6,10 @@ import {
   FiHelpCircle,
   FiLogOut,
   FiPlusCircle,
-  FiBookOpen
+  FiBookOpen,
+  FiList,
+  FiSettings,
+  FiLayers
 } from "react-icons/fi";
 import LogoImage from "../../assets/images/testing.png"
 import { useNavigate } from "react-router-dom";
@@ -30,7 +33,7 @@ const Sidebar = () => {
 
   return (
     <Box
-      w={{ base: "60px", md: "240px" }}
+      w={{ base: "62px", md: "242px" }}
       bgGradient="linear(to-b, blue.600, blue.700)"
       h="100vh"
       position="fixed"
@@ -140,7 +143,7 @@ const Sidebar = () => {
           {/* Projects Section */}
           <NavSection label="Projects">
             <NavItem
-              icon={FiPlusCircle}
+              icon={FiSettings}
               label="Create Project"
               href="/create-project"
             />
@@ -148,12 +151,17 @@ const Sidebar = () => {
 
           <Divider my={4} borderColor="whiteAlpha.200" />
 
-          {/* update order Section */}
+          {/* Sequence and Steps Section */}
           <NavSection label="Sequence and Steps">
             <NavItem
-              icon={FiPlusCircle}
+              icon={FiList}
               label="Update Order"
               href="/update-order"
+            />
+            <NavItem
+              icon={FiLayers}
+              label="Create Execution Sequence"
+              href="/create-seq"
             />
           </NavSection>
 

@@ -18,20 +18,26 @@ import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const AddScenario = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [scenario, setScenario] = useState("");
   const [urls, setUrls] = useState("");
-  const [executionSequenceNumber, setExecutionSequenceNumber] = useState(""); // State for sequence number
-  const [order, setOrder] = useState(""); // State for order
-  const [scenariosName, setScenariosName] = useState(""); // New state for scenarios_name
+  const [executionSequenceNumber, setExecutionSequenceNumber] = useState("");
+  const [executionSequences, setExecutionSequences] = useState([]);
+  const [order, setOrder] = useState("");
+  const [scenariosName, setScenariosName] = useState("");
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingSequences, setIsLoadingSequences] = useState(false);
   const toast = useToast();
 
+  // Fetch projects on component mount
   useEffect(() => {
     const fetchProjects = async () => {
+      setIsLoadingProjects(true);
       try {
         const response = await axios.get("/get_projects/");
         setProjects(response.data);
@@ -43,10 +49,45 @@ const AddScenario = () => {
           duration: 3000,
           isClosable: true,
         });
+      } finally {
+        setIsLoadingProjects(false);
       }
     };
     fetchProjects();
   }, []);
+
+  // Fetch execution sequences when selectedProject changes
+  useEffect(() => {
+    if (selectedProject) {
+      const fetchExecutionSequences = async () => {
+        setIsLoadingSequences(true);
+        try {
+          const response = await axios.get(`/get_execution_sequences/${selectedProject}/`);
+          setExecutionSequences(response.data || []);
+          setExecutionSequenceNumber(""); // Reset selection when project changes
+          setScenariosName(""); // Reset scenario name
+        } catch (error) {
+          toast({
+            title: "Error fetching execution sequences",
+            description: error.message,
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          setExecutionSequences([]);
+          setExecutionSequenceNumber("");
+          setScenariosName("");
+        } finally {
+          setIsLoadingSequences(false);
+        }
+      };
+      fetchExecutionSequences();
+    } else {
+      setExecutionSequences([]);
+      setExecutionSequenceNumber("");
+      setScenariosName("");
+    }
+  }, [selectedProject]);
 
   const handleStartMapping = async () => {
     if (!selectedProject) {
@@ -60,21 +101,10 @@ const AddScenario = () => {
       return;
     }
 
-    if (!scenario.trim() || !urls.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both the scenario and at least one URL.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
     if (!executionSequenceNumber) {
       toast({
-        title: "Execution Sequence Number Missing",
-        description: "Please provide an execution sequence number.",
+        title: "Execution Sequence Not Selected",
+        description: "Please select an execution sequence.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -93,6 +123,17 @@ const AddScenario = () => {
       return;
     }
 
+    if (!scenario.trim() || !urls.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both the scenario and at least one URL.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -100,9 +141,9 @@ const AddScenario = () => {
         project_id: selectedProject,
         bdd: scenario,
         links: urls,
-        execution_sequence_number: executionSequenceNumber, // Include sequence number
-        order: order || null, // Send null if not provided
-        scenarios_name: scenariosName, // Include scenarios_name
+        execution_sequence_number: executionSequenceNumber,
+        order: order || null,
+        scenarios_name: scenariosName,
       });
 
       toast({
@@ -182,6 +223,7 @@ const AddScenario = () => {
                     borderColor="gray.200"
                     _hover={{ borderColor: "blue.500" }}
                     _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                    isDisabled={isLoadingProjects}
                   >
                     {projects.map((project) => (
                       <option key={project.project_id} value={project.project_id}>
@@ -193,28 +235,46 @@ const AddScenario = () => {
 
                 <Box>
                   <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
+                    Select Execution Sequence
+                  </Text>
+                  <Select
+                    placeholder="Choose an execution sequence..."
+                    value={executionSequenceNumber}
+                    onChange={(e) => setExecutionSequenceNumber(e.target.value)}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{ borderColor: "blue.500" }}
+                    _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                    isDisabled={!selectedProject || executionSequences.length === 0}
+                  >
+                    {executionSequences.map((sequence) => (
+                      <option key={sequence.execution_sequence_id} value={sequence.number}>
+                        {sequence.number}
+                      </option>
+                    ))}
+                  </Select>
+                  {isLoadingSequences ? (
+                    <Spinner size="sm" color="#3182ce" mt={2} />
+                  ) : selectedProject && executionSequences.length === 0 ? (
+                    <Text fontSize="sm" color="#4a5568" mt={2}>
+                      No execution sequences found for this project. Please create one in the{" "}
+                      <Link to="/create_execution_sequence" style={{ color: "#3182ce", textDecoration: "underline" }}>
+                        Create Execution Sequence
+                      </Link>{" "}
+                      page.
+                    </Text>
+                  ) : null}
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
                     Scenario Name
                   </Text>
                   <Input
                     placeholder="Enter scenario name..."
                     value={scenariosName}
                     onChange={(e) => setScenariosName(e.target.value)}
-                    bg="white"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    _hover={{ borderColor: "blue.500" }}
-                    _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
-                  />
-                </Box>
-
-                <Box>
-                  <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
-                    Execution Sequence Number
-                  </Text>
-                  <Input
-                    placeholder="Enter sequence number..."
-                    value={executionSequenceNumber}
-                    onChange={(e) => setExecutionSequenceNumber(e.target.value)}
                     bg="white"
                     border="1px solid"
                     borderColor="gray.200"

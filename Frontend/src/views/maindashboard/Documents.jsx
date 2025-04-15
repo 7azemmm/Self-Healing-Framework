@@ -2,37 +2,36 @@ import {
   Box,
   Text,
   VStack,
-  HStack,
+
   Button,
-  IconButton,
+
   Input,
   Select,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
+  
   useToast,
   Card,
   CardHeader,
   CardBody,
+  Spinner,
 } from "@chakra-ui/react";
-import { FaUpload, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
+import { FaUpload,  FaFileUpload } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const Documents = () => {
   const toast = useToast();
-  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedProject, setSelectedProject] = useState("");
   const [executionSequenceNumber, setExecutionSequenceNumber] = useState("");
-  const [scenariosName, setScenariosName] = useState(""); // New state for scenarios_name
+  const [executionSequences, setExecutionSequences] = useState([]);
+  const [scenariosName, setScenariosName] = useState("");
   const [projects, setProjects] = useState([]);
   const [bddFiles, setBddFiles] = useState([]);
   const [testScriptFiles, setTestScriptFiles] = useState([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingSequences, setIsLoadingSequences] = useState(false);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -65,6 +64,7 @@ const Documents = () => {
   // Fetch projects on component mount
   useEffect(() => {
     const fetchProjects = async () => {
+      setIsLoadingProjects(true);
       try {
         const response = await axios.get("/get_projects/");
         setProjects(response.data);
@@ -76,38 +76,42 @@ const Documents = () => {
           duration: 3000,
           isClosable: true,
         });
+      } finally {
+        setIsLoadingProjects(false);
       }
     };
     fetchProjects();
   }, []);
 
-  // Fetch uploaded files for a project whenever selectedProject changes
+  // Fetch execution sequences when selectedProject changes
   useEffect(() => {
     if (selectedProject) {
-      fetchUploadedFiles();
+      const fetchExecutionSequences = async () => {
+        setIsLoadingSequences(true);
+        try {
+          const response = await axios.get(`/get_execution_sequences/${selectedProject}/`);
+          setExecutionSequences(response.data || []);
+          setExecutionSequenceNumber(""); // Reset selection when project changes
+        } catch (error) {
+          toast({
+            title: "Error fetching execution sequences",
+            description: error.message,
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          setExecutionSequences([]);
+          setExecutionSequenceNumber("");
+        } finally {
+          setIsLoadingSequences(false);
+        }
+      };
+      fetchExecutionSequences();
+    } else {
+      setExecutionSequences([]);
+      setExecutionSequenceNumber("");
     }
   }, [selectedProject]);
-
-  // Function to fetch uploaded files (mocked endpoint)
-  const fetchUploadedFiles = async () => {
-    if (!selectedProject) return;
-
-    try {
-      // Note: This endpoint doesn't exist in the provided views.py.
-      // You'll need to implement a `/get_uploaded_files/<project_id>/` endpoint in the backend.
-      const response = await axios.get(`/get_uploaded_files/${selectedProject}/`);
-      setUploadedFiles(response.data || []);
-    } catch (error) {
-      toast({
-        title: "Error fetching uploaded files",
-        description: error.message,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      setUploadedFiles([]);
-    }
-  };
 
   // Handle file upload
   const handleUpload = async () => {
@@ -124,8 +128,8 @@ const Documents = () => {
 
     if (!executionSequenceNumber) {
       toast({
-        title: "No sequence number provided.",
-        description: "Please provide an execution sequence number.",
+        title: "No execution sequence selected.",
+        description: "Please select an execution sequence.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -164,7 +168,7 @@ const Documents = () => {
     });
     formData.append("project_id", selectedProject);
     formData.append("execution_sequence_number", executionSequenceNumber);
-    formData.append("scenarios_name", scenariosName); // Add scenarios_name to formData
+    formData.append("scenarios_name", scenariosName);
 
     try {
       const response = await axios.post("/documents/", formData, {
@@ -173,7 +177,6 @@ const Documents = () => {
         },
       });
 
-      // Since response.data is not a list of files, handle the success message
       toast({
         title: "Files uploaded successfully.",
         description: response.data.message || "All files have been uploaded.",
@@ -182,14 +185,11 @@ const Documents = () => {
         isClosable: true,
       });
 
-      // Fetch the updated list of uploaded files
-      await fetchUploadedFiles();
-
       // Reset form
       setBddFiles([]);
       setTestScriptFiles([]);
       setExecutionSequenceNumber("");
-      setScenariosName(""); // Reset scenarios_name
+      setScenariosName("");
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || error.response?.data?.message || error.message;
@@ -201,40 +201,6 @@ const Documents = () => {
         isClosable: true,
       });
     }
-  };
-
-  // Handle file deletion
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/delete_document/${id}/`);
-      toast({
-        title: "File deleted.",
-        status: "info",
-        duration: 3000,
-        isClosable: true,
-      });
-      // Refresh the uploaded files list
-      await fetchUploadedFiles();
-    } catch (error) {
-      toast({
-        title: "Delete failed.",
-        description: error.message,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  // Placeholder for viewing files
-  const handleViewFile = (fileName) => {
-    toast({
-      title: `Viewing: ${fileName}`,
-      description: "This is a placeholder for viewing file functionality.",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
   };
 
   return (
@@ -275,18 +241,6 @@ const Documents = () => {
           .upload-button:hover {
             transform: translateY(-2px);
           }
-          .table-row {
-            transition: background-color 0.2s ease;
-          }
-          .table-row:hover {
-            background: #f8fafc;
-          }
-          .action-button {
-            transition: all 0.2s ease;
-          }
-          .action-button:hover {
-            transform: translateY(-1px);
-          }
         `}
       </style>
 
@@ -322,6 +276,7 @@ const Documents = () => {
                     border="1px solid #e2e8f0"
                     _hover={{ borderColor: "#3182ce" }}
                     _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
+                    isDisabled={isLoadingProjects}
                   >
                     {projects.map((project) => (
                       <option key={project.project_id} value={project.project_id}>
@@ -330,15 +285,35 @@ const Documents = () => {
                     ))}
                   </Select>
 
-                  <Input
-                    placeholder="Execution Sequence Number"
-                    value={executionSequenceNumber}
-                    onChange={(e) => setExecutionSequenceNumber(e.target.value)}
-                    bg="white"
-                    border="1px solid #e2e8f0"
-                    _hover={{ borderColor: "#3182ce" }}
-                    _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
-                  />
+                  <Box>
+                    <Select
+                      placeholder="Select Execution Sequence"
+                      value={executionSequenceNumber}
+                      onChange={(e) => setExecutionSequenceNumber(e.target.value)}
+                      bg="white"
+                      border="1px solid #e2e8f0"
+                      _hover={{ borderColor: "#3182ce" }}
+                      _focus={{ borderColor: "#3182ce", boxShadow: "0 0 0 1px #3182ce" }}
+                      isDisabled={!selectedProject || executionSequences.length === 0}
+                    >
+                      {executionSequences.map((sequence) => (
+                        <option key={sequence.execution_sequence_id} value={sequence.number}>
+                          {sequence.number}
+                        </option>
+                      ))}
+                    </Select>
+                    {isLoadingSequences ? (
+                      <Spinner size="sm" color="#3182ce" mt={2} />
+                    ) : selectedProject && executionSequences.length === 0 ? (
+                      <Text fontSize="sm" color="#4a5568" mt={2}>
+                        No execution sequences found for this project. Please create one in the{" "}
+                        <Link to="/create_execution_sequence" style={{ color: "#3182ce", textDecoration: "underline" }}>
+                          Create Execution Sequence
+                        </Link>{" "}
+                        page.
+                      </Text>
+                    ) : null}
+                  </Box>
 
                   <Input
                     placeholder="Scenario Name"
@@ -433,67 +408,6 @@ const Documents = () => {
                     Upload Files
                   </Button>
                 </VStack>
-              </CardBody>
-            </Card>
-
-            <Card className="content-card">
-              <CardHeader>
-                <Text fontSize="lg" fontWeight="semibold" color="#2d3748">
-                  Uploaded Files
-                </Text>
-              </CardHeader>
-              <CardBody>
-                {uploadedFiles.length === 0 ? (
-                  <Text color="#4a5568" textAlign="center" py={8}>
-                    No files have been uploaded yet.
-                  </Text>
-                ) : (
-                  <Table variant="simple">
-                    <Thead>
-                      <Tr>
-                        <Th color="#4a5568">File Name</Th>
-                        <Th color="#4a5568">Size</Th>
-                        <Th color="#4a5568">Type</Th>
-                        <Th color="#4a5568">Uploaded At</Th>
-                        <Th color="#4a5568">Project</Th>
-                        <Th color="#4a5568">Actions</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {uploadedFiles.map((file) => (
-                        <Tr key={file.id} className="table-row">
-                          <Td color="#2d3748">{file.name}</Td>
-                          <Td color="#2d3748">{file.size}</Td>
-                          <Td color="#2d3748">{file.type}</Td>
-                          <Td color="#2d3748">{file.uploadedAt}</Td>
-                          <Td color="#2d3748">{file.project}</Td>
-                          <Td>
-                            <HStack spacing={2}>
-                              <IconButton
-                                icon={<FaEye />}
-                                colorScheme="blue"
-                                variant="ghost"
-                                size="sm"
-                                aria-label="View File"
-                                onClick={() => handleViewFile(file.name)}
-                                className="action-button"
-                              />
-                              <IconButton
-                                icon={<FaTrash />}
-                                colorScheme="red"
-                                variant="ghost"
-                                size="sm"
-                                aria-label="Delete File"
-                                onClick={() => handleDelete(file.id)}
-                                className="action-button"
-                              />
-                            </HStack>
-                          </Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                )}
               </CardBody>
             </Card>
           </Box>

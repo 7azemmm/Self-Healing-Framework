@@ -111,16 +111,22 @@ def documents(request):
         elif key.startswith('test_script_'):
             test_script_files[file.name] = content
 
-    # Create ExecutionSequence
+    # Validate project
     try:
         project = Project.objects.get(project_id=project_id)
     except Project.DoesNotExist:
         return Response({"error": "Invalid project_id"}, status=404)
 
-    execution_sequence = ExecutionSequence.objects.create(
-        number=execution_sequence_number,
-        project=project
-    )
+    # Fetch the existing ExecutionSequence
+    try:
+        execution_sequence = ExecutionSequence.objects.get(
+            project=project,
+            number=execution_sequence_number
+        )
+    except ExecutionSequence.DoesNotExist:
+        return Response({
+            "error": f"Execution sequence number '{execution_sequence_number}' not found for project_id {project_id}"
+        }, status=404)
 
     # Process BDD and test script mapping
     outputs = processor.process_all_features(bdd_files, test_script_files)
@@ -140,8 +146,10 @@ def documents(request):
             order=idx + 1  # 1-based index
         )
 
-    return Response({"message": "Added Successfully", "execution_sequence_id": execution_sequence.execution_sequence_id}, status=201)
-
+    return Response({
+        "message": "Added Successfully",
+        "execution_sequence_id": execution_sequence.execution_sequence_id
+    }, status=201)
 
 
 
@@ -816,16 +824,16 @@ def get_execution_sequences_exe(request, project_id):
 def create_execution_sequence(request):
     """
     Create a new execution sequence for a given project.
-    Request body: { "project_id": int, "execution_sequence_name": string }
+    Request body: { "project_id": int, "execution_sequence_number": string }
     """
     data = request.data
     project_id = data.get('project_id')
-    execution_sequence_name = data.get('execution_sequence_name')
+    execution_sequence_number = data.get('execution_sequence_number')
 
-    if not project_id or not execution_sequence_name:
+    if not project_id or not execution_sequence_number:
         return Response({
             "success": False,
-            "message": "Both project_id and execution_sequence_name are required."
+            "message": "Both project_id and execution_sequence_number are required."
         }, status=400)
 
     try:
@@ -836,23 +844,25 @@ def create_execution_sequence(request):
             "message": f"Project with ID {project_id} not found."
         }, status=404)
 
-    # Determine the next execution sequence number for this project
-    existing_sequences = ExecutionSequence.objects.filter(project=project).order_by('-number')
-    next_number = (existing_sequences.first().number + 1) if existing_sequences.exists() else 1
+    # Check if an execution sequence with this number already exists for the project
+    if ExecutionSequence.objects.filter(project=project, number=execution_sequence_number).exists():
+        return Response({
+            "success": False,
+            "message": f"Execution sequence number '{execution_sequence_number}' already exists for this project."
+        }, status=400)
 
     # Create the new execution sequence
     execution_sequence = ExecutionSequence.objects.create(
         project=project,
-        number=next_number,
-        name=execution_sequence_name
+        number=execution_sequence_number
     )
 
     return Response({
         "success": True,
-        "message": f"Execution sequence '{execution_sequence_name}' (number: {next_number}) created successfully.",
+        "message": f"Execution sequence '{execution_sequence_number}' created successfully.",
         "execution_sequence": {
             "number": execution_sequence.number,
-            "name": execution_sequence.name,
-            "execution_sequence_id": execution_sequence.execution_sequence_id
+            "execution_sequence_id": execution_sequence.execution_sequence_id,
+            "project_id": execution_sequence.project.project_id
         }
     }, status=201)

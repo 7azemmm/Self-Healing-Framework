@@ -6,6 +6,7 @@ import Execute from './views/maindashboard/Execute.jsx';
 import AddScenario from './views/addScenario/addScenarioPage.jsx';
 import CreateProject from './views/maindashboard/CreateProject.jsx'; // Add this line
 import UpdateOrder from './views/maindashboard/UpdateOrder';
+import CreateExecutionSequence from './views/maindashboard/CreateExecutionSequence';
 
 const routes = [
   {
@@ -44,6 +45,10 @@ const routes = [
   {
     path: '/update-order',
     component: UpdateOrder,
+  },
+  {
+    path: '/create-seq',
+    component: CreateExecutionSequence,
   },
 ];
 
