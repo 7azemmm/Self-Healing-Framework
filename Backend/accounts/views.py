@@ -572,14 +572,16 @@ def execute_tests(request):
                 }
             }, status=404)
 
-        # Build the combined test steps
+        # Build the combined test steps and track scenarios
         all_steps = []
+        scenario_mapping = {}  # Map scenario_id to scenario object for updates
         for entry in sequence_entries:
             scenario = entry.scenario
             mapping = scenario.mapping_file
             header = mapping[0]
             test_steps = [dict(zip(header, row)) for row in mapping[1:]]
             all_steps.extend(test_steps)
+            scenario_mapping[scenario.scenario_id] = scenario  # Store scenario reference
 
         scenario_count = sum(1 for row in all_steps if row.get("Step", "").strip().startswith("When"))
 
@@ -601,6 +603,25 @@ def execute_tests(request):
                     label=True,
                     created_at=element.get('timestamp'),
                 )
+
+            # Update the scenarios' mapping_file with new strategies
+            for healed_element in report['healed_elements']:
+                old_id = healed_element['original_element_id']
+                new_strategies = healed_element['new_strategies']
+                new_id = new_strategies.get('id', '')
+                new_css = new_strategies.get('CSS Selector', '')
+                new_xpath = new_strategies.get('XPath (Absolute)', '')
+
+                # Update the mapping_file for each scenario
+                for scenario in scenario_mapping.values():
+                    mapping = scenario.mapping_file
+                    for row in mapping[1:]:
+                        # Assuming indices: 2=ID, 8=CSS Selector, 6=XPath (adjust if different)
+                        if row[2] == old_id and new_id and new_css and new_xpath:
+                            row[2] = new_id
+                            row[8] = new_css
+                            row[6] = new_xpath
+                    scenario.save()  # Save the updated scenario to the database
 
             # Store metrics
             Metrics.objects.create(
@@ -653,7 +674,6 @@ def execute_tests(request):
                 "broken_count": 0
             }
         }, status=500)
-
 
 
 @api_view(['GET'])

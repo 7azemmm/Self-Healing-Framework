@@ -91,10 +91,18 @@ const Sidebar = () => {
             label="Dashboard"
             href="/dashboard"
           />
+          </NavSection>
+          <Divider my={4} borderColor="whiteAlpha.200" />
+          <NavSection label="Mapping and new Scenario">
           <NavItem
             icon={FiFolder}
             label="Documents"
             href="/documents"
+          />
+          <NavItem
+            icon={FiPlusCircle}
+            label="New Scenario"
+            href="/add-scenario"
           />
         </NavSection>
 
@@ -106,11 +114,6 @@ const Sidebar = () => {
             icon={FiPlay}
             label="Execute Tests"
             href="/execute"
-          />
-          <NavItem
-            icon={FiPlusCircle}
-            label="New Scenario"
-            href="/add-scenario"
           />
         </NavSection>
 
@@ -129,10 +132,10 @@ const Sidebar = () => {
 
 
          {/* update order Section */}
-         <NavSection label="Projects">
+         <NavSection label="Sequence and Steps">
           <NavItem
             icon={FiPlusCircle}
-            label="Update Oreder"
+            label="Update Order"
             href="/update-order"
           />
         </NavSection>
