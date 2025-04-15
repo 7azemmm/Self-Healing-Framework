@@ -811,3 +811,48 @@ def get_execution_sequences_exe(request, project_id):
     execution_sequences = ExecutionSequence.objects.filter(project=project)
     sequence_numbers = [seq.number for seq in execution_sequences]
     return Response(sequence_numbers, status=200)
+
+@api_view(['POST'])
+def create_execution_sequence(request):
+    """
+    Create a new execution sequence for a given project.
+    Request body: { "project_id": int, "execution_sequence_name": string }
+    """
+    data = request.data
+    project_id = data.get('project_id')
+    execution_sequence_name = data.get('execution_sequence_name')
+
+    if not project_id or not execution_sequence_name:
+        return Response({
+            "success": False,
+            "message": "Both project_id and execution_sequence_name are required."
+        }, status=400)
+
+    try:
+        project = Project.objects.get(project_id=project_id)
+    except Project.DoesNotExist:
+        return Response({
+            "success": False,
+            "message": f"Project with ID {project_id} not found."
+        }, status=404)
+
+    # Determine the next execution sequence number for this project
+    existing_sequences = ExecutionSequence.objects.filter(project=project).order_by('-number')
+    next_number = (existing_sequences.first().number + 1) if existing_sequences.exists() else 1
+
+    # Create the new execution sequence
+    execution_sequence = ExecutionSequence.objects.create(
+        project=project,
+        number=next_number,
+        name=execution_sequence_name
+    )
+
+    return Response({
+        "success": True,
+        "message": f"Execution sequence '{execution_sequence_name}' (number: {next_number}) created successfully.",
+        "execution_sequence": {
+            "number": execution_sequence.number,
+            "name": execution_sequence.name,
+            "execution_sequence_id": execution_sequence.execution_sequence_id
+        }
+    }, status=201)

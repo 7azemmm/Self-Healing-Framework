@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics,get_execution_sequences,get_execution_sequence_scenarios,update_scenario_order,get_execution_sequences_exe
+from .views import SignupView, LoginView, get_user,documents,create_project,get_projects,scenario,healing,execute_tests,get_metrics,get_project_metrics,get_execution_sequences,get_execution_sequence_scenarios,update_scenario_order,get_execution_sequences_exe,create_execution_sequence
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
@@ -17,4 +17,5 @@ urlpatterns = [
     path('get_execution_sequence_scenarios/<int:project_id>/<str:execution_sequence_number>/', get_execution_sequence_scenarios, name='get_execution_sequence_scenarios'), 
     path('update_scenario_order/', update_scenario_order, name='update_scenario_order'),
     path('get_execution_sequences_exe/<int:project_id>/', get_execution_sequences_exe, name='get_execution_sequences_exe'),
+    path('create_execution_sequence/', create_execution_sequence, name='create_execution_sequence'),
 ]
