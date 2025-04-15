@@ -32,16 +32,15 @@ const Sidebar = () => {
     <Box
       w={{ base: "60px", md: "240px" }}
       bgGradient="linear(to-b, blue.600, blue.700)"
-      minH="100vh"
-      py={6}
-      display="flex"
-      flexDirection="column"
+      h="100vh"
       position="fixed"
       zIndex={5}
       boxShadow="lg"
+      display="flex"
+      flexDirection="column"
     >
       {/* Logo/Brand */}
-      <Box px={4} mb={8}>
+      <Box px={4} py={6} flexShrink={0}>
         <Box display="flex" alignItems="center" gap={3}>
           <Box
             width={{ base: '32px', md: '45px' }}
@@ -83,83 +82,101 @@ const Sidebar = () => {
         </Box>
       </Box>
 
-      <VStack spacing={1} align="stretch" flex={1}>
-        {/* Main Navigation */}
-        <NavSection>
-          <NavItem
-            icon={FiGrid}
-            label="Dashboard"
-            href="/dashboard"
-          />
+      {/* Scrollable Navigation Section */}
+      <Box 
+        flex="1" 
+        overflowY="auto" 
+        overflowX="hidden"
+        css={{
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            width: '6px',
+            background: 'rgba(255, 255, 255, 0.1)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '24px',
+          },
+        }}
+      >
+        <VStack spacing={1} align="stretch" px={4}>
+          {/* Main Navigation */}
+          <NavSection>
+            <NavItem
+              icon={FiGrid}
+              label="Dashboard"
+              href="/dashboard"
+            />
           </NavSection>
           <Divider my={4} borderColor="whiteAlpha.200" />
           <NavSection label="Mapping and new Scenario">
-          <NavItem
-            icon={FiFolder}
-            label="Documents"
-            href="/documents"
-          />
-          <NavItem
-            icon={FiPlusCircle}
-            label="New Scenario"
-            href="/add-scenario"
-          />
-        </NavSection>
+            <NavItem
+              icon={FiFolder}
+              label="Documents"
+              href="/documents"
+            />
+            <NavItem
+              icon={FiPlusCircle}
+              label="New Scenario"
+              href="/add-scenario"
+            />
+          </NavSection>
 
-        <Divider my={4} borderColor="whiteAlpha.200" />
+          <Divider my={4} borderColor="whiteAlpha.200" />
 
-        {/* Execution Section */}
-        <NavSection label="Execution">
-          <NavItem
-            icon={FiPlay}
-            label="Execute Tests"
-            href="/execute"
-          />
-        </NavSection>
+          {/* Execution Section */}
+          <NavSection label="Execution">
+            <NavItem
+              icon={FiPlay}
+              label="Execute Tests"
+              href="/execute"
+            />
+          </NavSection>
 
-        <Divider my={4} borderColor="whiteAlpha.200" />
+          <Divider my={4} borderColor="whiteAlpha.200" />
 
-        {/* Projects Section */}
-        <NavSection label="Projects">
-          <NavItem
-            icon={FiPlusCircle}
-            label="Create Project"
-            href="/create-project"
-          />
-        </NavSection>
+          {/* Projects Section */}
+          <NavSection label="Projects">
+            <NavItem
+              icon={FiPlusCircle}
+              label="Create Project"
+              href="/create-project"
+            />
+          </NavSection>
 
-        <Divider my={4} borderColor="whiteAlpha.200" />
+          <Divider my={4} borderColor="whiteAlpha.200" />
 
+          {/* update order Section */}
+          <NavSection label="Sequence and Steps">
+            <NavItem
+              icon={FiPlusCircle}
+              label="Update Order"
+              href="/update-order"
+            />
+          </NavSection>
 
-         {/* update order Section */}
-         <NavSection label="Sequence and Steps">
-          <NavItem
-            icon={FiPlusCircle}
-            label="Update Order"
-            href="/update-order"
-          />
-        </NavSection>
+          <Divider my={4} borderColor="whiteAlpha.200" />
 
-        <Divider my={4} borderColor="whiteAlpha.200" />
+          {/* Help Section */}
+          <NavSection label="Help & Support">
+            <NavItem
+              icon={FiBookOpen}
+              label="Documentation"
+              href="/documentation"
+            />
+            <NavItem
+              icon={FiHelpCircle}
+              label="Support"
+              href="/support"
+            />
+          </NavSection>
+        </VStack>
+      </Box>
 
-        {/* Help Section */}
-        <NavSection label="Help & Support">
-         
-          <NavItem
-            icon={FiBookOpen}
-            label="Documentation"
-            href="/documentation"
-          />
-          <NavItem
-            icon={FiHelpCircle}
-            label="Support"
-            href="/support"
-          />
-        </NavSection>
-      </VStack>
-
-      {/* Logout Section */}
-      <Box mt={6} px={4}>
+      {/* Fixed Logout Section */}
+      <Box px={4} py={6} flexShrink={0}>
         <Divider mb={4} borderColor="whiteAlpha.200" />
         <Box
           onClick={handleLogout}
