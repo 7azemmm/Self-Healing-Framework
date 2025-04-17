@@ -4,7 +4,7 @@ from .views import SignupView, LoginView, get_user,documents,create_project,get_
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
-    path('user/', get_user, name='get_user'),
+    path('get_user/', get_user, name='get_user'),
     path('documents/', documents, name='documents'),
     path('scenario/', scenario, name='scenario'),
     path('healing/', healing, name='healing'),

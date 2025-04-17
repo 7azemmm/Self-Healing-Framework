@@ -1,7 +1,35 @@
-import { Flex, Text, Avatar, IconButton, Link, Box } from "@chakra-ui/react";
-import { FiSettings } from "react-icons/fi";
+import { Flex, Text, Avatar, IconButton, Link, Box, Menu, MenuButton, MenuList, MenuItem, Spinner } from "@chakra-ui/react";
+import { FiSettings, FiLogOut } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { getUserData, logout } from "../../services/auth/authService.js"; // Adjust the path as needed
 
 const Navbar = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      try {
+        const userData = await getUserData();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setUser(null); // Handle error (e.g., user not logged in)
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <Flex
       as="header"
@@ -41,21 +69,52 @@ const Navbar = () => {
             transition="all 0.2s"
           />
         </Link>
-        <Box
-          transition="transform 0.2s"
-          _hover={{ transform: "translateY(-2px)" }}
-        >
-          <Avatar
-            size="sm"
-            name="Profile"
-            bg="whiteAlpha.300"
-            color="white"
-            cursor="pointer"
-            _hover={{
-              bg: "whiteAlpha.400"
-            }}
-          />
-        </Box>
+
+        {loading ? (
+          <Spinner size="sm" color="white" />
+        ) : user ? (
+          <Menu>
+            <MenuButton
+              as={Box}
+              transition="transform 0.2s"
+              _hover={{ transform: "translateY(-2px)" }}
+            >
+              <Avatar
+                size="sm"
+                name={user.full_name || "User"}
+                bg="whiteAlpha.300"
+                color="white"
+                cursor="pointer"
+                _hover={{
+                  bg: "whiteAlpha.400"
+                }}
+              />
+            </MenuButton>
+            <MenuList>
+              <MenuItem isDisabled>
+                <Text fontSize="sm" color="gray.600">
+                  Signed in as {user.full_name || "User"}
+                </Text>
+              </MenuItem>
+              <MenuItem onClick={handleLogout} icon={<FiLogOut />}>
+                Logout
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        ) : (
+          <Link href="/login">
+            <Avatar
+              size="sm"
+              name="Login"
+              bg="whiteAlpha.300"
+              color="white"
+              cursor="pointer"
+              _hover={{
+                bg: "whiteAlpha.400"
+              }}
+            />
+          </Link>
+        )}
       </Flex>
     </Flex>
   );

@@ -13,7 +13,6 @@ axios.interceptors.response.use(
   }
 );
 
-
 export const login = async (email, password) => {
   try {
     const response = await axios.post(`/login/`, { email, password });
@@ -39,4 +38,23 @@ export const signup = async (fullName, email, password) => {
 
 export const logout = () => {
   localStorage.removeItem('access_token');
+  window.location.href = '/login';
+};
+
+export const getUserData = async () => {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No access token found');
+    }
+
+    const response = await axios.get('/get_user/', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data; // { id, full_name, email }
+  } catch (error) {
+    throw error.response?.data || 'Failed to fetch user data';
+  }
 };

@@ -1,6 +1,6 @@
 # accounts/views.py
 from rest_framework import generics, permissions
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model  # Import get_user_model
@@ -11,6 +11,7 @@ from .controllers.bdd_processor import process_bdd
 from .controllers.html_processor import process_html
 from .controllers.mapping import map_bdd_to_html
 from .controllers.heal import SelfHealingFramework
+from rest_framework.permissions import IsAuthenticated
 import json
 from datetime import datetime
 from django.db.models import Sum
@@ -40,9 +41,11 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 @api_view(['GET'])
-def get_user(self):
-    users = User.objects.all() 
-    return Response(UserSerializer(users,many=True).data)
+@permission_classes([IsAuthenticated])
+def get_user(request):  # Fixed: Changed 'self' to 'request'
+    user = request.user  # Get the authenticated user
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
 
 # @api_view(['POST'])
 # def documents(request):
