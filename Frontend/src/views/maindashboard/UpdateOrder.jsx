@@ -17,8 +17,18 @@ import {
   CardBody,
   IconButton,
   Spinner,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Input,
+  Textarea,
+  Icon,
 } from "@chakra-ui/react";
-import { FiArrowUp, FiArrowDown } from "react-icons/fi";
+import { FiArrowUp, FiArrowDown, FiFileText, FiLink, FiPlay } from "react-icons/fi";
 import Sidebar from "../common/Sidebar";
 import Navbar from "../common/Navbar";
 import { useState, useEffect } from "react";
@@ -35,6 +45,14 @@ const UpdateOrder = () => {
   const [executionSequenceId, setExecutionSequenceId] = useState(null);
   const [isLoadingSequences, setIsLoadingSequences] = useState(false);
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addScenarioName, setAddScenarioName] = useState("");
+  const [addOrder, setAddOrder] = useState("");
+  const [addBDD, setAddBDD] = useState("");
+  const [addUrls, setAddUrls] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   // Fetch projects on component mount
   useEffect(() => {
@@ -116,19 +134,8 @@ const UpdateOrder = () => {
           );
           console.log("Scenarios response:", scenariosResponse.data);
           setScenarios(scenariosResponse.data || []);
-        } catch (error) {
-          toast({
-            title: "Error fetching data",
-            description: error.message,
-            status: "error",
-            duration: 3000,
-            isClosable: true,
-          });
-          setScenarios([]);
-          setExecutionSequenceId(null);
-        } finally {
-          setIsLoadingScenarios(false);
-        }
+        } catch { /* ignore error */ }
+        setIsLoadingScenarios(false);
       };
       fetchData();
     } else {
@@ -151,6 +158,9 @@ const UpdateOrder = () => {
     setScenarios(updatedScenarios);
   };
 
+  const openConfirmModal = () => setIsConfirmModalOpen(true);
+  const closeConfirmModal = () => setIsConfirmModalOpen(false);
+
   const handleSaveOrder = async () => {
     if (!executionSequenceId) {
       toast({
@@ -162,21 +172,16 @@ const UpdateOrder = () => {
       });
       return;
     }
-
-    const confirm = window.confirm("Are you sure you want to save the new order?");
-    if (!confirm) return;
-
+    setIsSavingOrder(true);
     const newOrder = scenarios.map((scenario) => ({
       scenario_id: scenario.scenario_id,
       order: scenario.order,
     }));
-
     try {
       const response = await axios.post("/update_scenario_order/", {
         execution_sequence_id: executionSequenceId,
         new_order: newOrder,
       });
-
       toast({
         title: "Success",
         description: response.data.message || "Order updated successfully",
@@ -184,6 +189,7 @@ const UpdateOrder = () => {
         duration: 3000,
         isClosable: true,
       });
+      closeConfirmModal();
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || error.response?.data?.message || error.message;
@@ -194,15 +200,74 @@ const UpdateOrder = () => {
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setIsSavingOrder(false);
     }
   };
 
-  const resetOrder = () => {
-    const resetScenarios = scenarios.map((scenario, idx) => ({
-      ...scenario,
-      order: idx + 1,
-    }));
-    setScenarios(resetScenarios);
+  
+
+  const openAddModal = () => {
+    setAddScenarioName("");
+    setAddOrder("");
+    setAddBDD("");
+    setAddUrls("");
+    setIsAddModalOpen(true);
+  };
+
+  const closeAddModal = () => setIsAddModalOpen(false);
+
+  const handleAddScenario = async () => {
+    if (!addScenarioName.trim() || !addBDD.trim() || !addUrls.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill all required fields.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    setIsAdding(true);
+    try {
+      await axios.post("/scenario/", {
+        project_id: selectedProject,
+        bdd: addBDD,
+        links: addUrls,
+        execution_sequence_number: executionSequenceNumber,
+        order: addOrder || null,
+        scenarios_name: addScenarioName,
+      });
+      toast({
+        title: "Scenario Added",
+        description: "Scenario added successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      closeAddModal();
+      // Refresh scenarios
+      if (selectedProject && executionSequenceNumber) {
+        setIsLoadingScenarios(true);
+        try {
+          const scenariosResponse = await axios.get(
+            `/get_execution_sequence_scenarios/${selectedProject}/${executionSequenceNumber}/`
+          );
+          setScenarios(scenariosResponse.data || []);
+        } catch { /* ignore error */ }
+        setIsLoadingScenarios(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Add Failed",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -325,25 +390,29 @@ const UpdateOrder = () => {
                   <Text fontSize="lg" fontWeight="semibold" color="#2d3748">
                     Scenarios
                   </Text>
-                  {scenarios.length > 0 && (
-                    <>
+                  <HStack>
+                    {selectedProject && executionSequenceNumber && (
                       <Button
-                        colorScheme="blue"
-                        className="save-button"
-                        onClick={handleSaveOrder}
-                        mr={2}
+                        colorScheme="green"
+                        onClick={openAddModal}
+                        isDisabled={isAddModalOpen}
                       >
-                        Save Order
+                        Add New Ordered Scenario
                       </Button>
-                      <Button
-                        colorScheme="gray"
-                        className="save-button"
-                        onClick={resetOrder}
-                      >
-                        Reset Order
-                      </Button>
-                    </>
-                  )}
+                    )}
+                    {scenarios.length > 0 && (
+                      <>
+                        <Button
+                          colorScheme="blue"
+                          className="save-button"
+                          onClick={openConfirmModal}
+                          mr={2}
+                        >
+                          Save Order
+                        </Button>
+                      </>
+                    )}
+                  </HStack>
                 </HStack>
               </CardHeader>
               <CardBody>
@@ -407,6 +476,109 @@ const UpdateOrder = () => {
           </Box>
         </Box>
       </Box>
+
+      <Modal isOpen={isAddModalOpen} onClose={closeAddModal} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Add New Ordered Scenario</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
+                  Scenario Name
+                </Text>
+                <Input
+                  placeholder="Enter scenario name..."
+                  value={addScenarioName}
+                  onChange={(e) => setAddScenarioName(e.target.value)}
+                  bg="white"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  _hover={{ borderColor: "blue.500" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                />
+              </Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2}>
+                  Order (optional)
+                </Text>
+                <Input
+                  placeholder="Enter order..."
+                  value={addOrder}
+                  onChange={(e) => setAddOrder(e.target.value)}
+                  bg="white"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  _hover={{ borderColor: "blue.500" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                />
+              </Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2} display="flex" alignItems="center" gap={2}>
+                  <Icon as={FiFileText} />
+                  BDD Scenario
+                </Text>
+                <Textarea
+                  placeholder="Enter your BDD scenario here..."
+                  value={addBDD}
+                  onChange={(e) => setAddBDD(e.target.value)}
+                  minH="120px"
+                  bg="white"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  _hover={{ borderColor: "blue.500" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                  fontSize="sm"
+                  fontFamily="mono"
+                />
+              </Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" color="#4A5568" mb={2} display="flex" alignItems="center" gap={2}>
+                  <Icon as={FiLink} />
+                  HTML Page URLs
+                </Text>
+                <Textarea
+                  placeholder="Enter URLs (one per line)..."
+                  value={addUrls}
+                  onChange={(e) => setAddUrls(e.target.value)}
+                  minH="80px"
+                  bg="white"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  _hover={{ borderColor: "blue.500" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+                  fontSize="sm"
+                  fontFamily="mono"
+                />
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleAddScenario} isLoading={isAdding} leftIcon={<Icon as={FiPlay} />}>
+              Add Scenario
+            </Button>
+            <Button onClick={closeAddModal} variant="ghost">Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isConfirmModalOpen} onClose={closeConfirmModal} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Confirm Save Order</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text>Are you sure you want to save the new order?</Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleSaveOrder} isLoading={isSavingOrder}>
+              Yes, Save
+            </Button>
+            <Button onClick={closeConfirmModal} variant="ghost">Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
