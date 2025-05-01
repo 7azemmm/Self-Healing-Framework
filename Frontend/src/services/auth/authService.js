@@ -58,3 +58,21 @@ export const getUserData = async () => {
     throw error.response?.data || 'Failed to fetch user data';
   }
 };
+
+export const updateProfile = async (userData) => {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No access token found');
+    }
+
+    const response = await axios.put('/update_profile/', userData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || 'Failed to update profile';
+  }
+};

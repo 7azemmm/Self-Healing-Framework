@@ -1,6 +1,7 @@
 import { Flex, Text, Avatar, IconButton, Link, Box, Menu, MenuButton, MenuList, MenuItem, Spinner } from "@chakra-ui/react";
-import { FiSettings, FiLogOut } from "react-icons/fi";
+import { FiSettings, FiLogOut, FiUser } from "react-icons/fi";
 import { useState, useEffect } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { getUserData, logout } from "../../services/auth/authService.js"; // Adjust the path as needed
 
 const Navbar = () => {
@@ -95,6 +96,9 @@ const Navbar = () => {
                 <Text fontSize="sm" color="gray.600">
                   Signed in as {user.full_name || "User"}
                 </Text>
+              </MenuItem>
+              <MenuItem as={RouterLink} to="/profile" icon={<FiUser />}>
+                Profile
               </MenuItem>
               <MenuItem onClick={handleLogout} icon={<FiLogOut />}>
                 Logout

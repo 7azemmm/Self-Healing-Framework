@@ -13,6 +13,9 @@ import {
   CardBody,
   VStack,
   useToast,
+  FormErrorMessage,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { login } from '../../services/auth/authService';
@@ -21,11 +24,50 @@ import { FiMail, FiLock } from 'react-icons/fi';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Reset previous errors
+    setLoginError('');
+    
+    // Validate inputs
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    
+    if (!isEmailValid || !isPasswordValid) {
+      return;
+    }
+    
+    setIsLoading(true);
     try {
       const data = await login(email, password);
       toast({
@@ -39,6 +81,17 @@ const Login = () => {
       console.log('Login successful:', data);
       navigate('/dashboard');
     } catch (error) {
+      console.error('Login failed:', error);
+      
+      // Set specific error message based on the error response
+      if (error.message && error.message.toLowerCase().includes('email')) {
+        setEmailError('This email is not registered');
+      } else if (error.message && error.message.toLowerCase().includes('password')) {
+        setPasswordError('Incorrect password');
+      } else {
+        setLoginError(error.message || "Invalid email or password");
+      }
+      
       toast({
         title: "Login failed",
         description: error.message || "Invalid email or password",
@@ -47,7 +100,8 @@ const Login = () => {
         isClosable: true,
         position: "top",
       });
-      console.error('Login failed:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,9 +141,16 @@ const Login = () => {
               </Text>
             </Box>
 
+            {loginError && (
+              <Alert status="error" borderRadius="md">
+                <AlertIcon />
+                {loginError}
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit}>
               <VStack spacing={6}>
-                <FormControl>
+                <FormControl isInvalid={!!emailError}>
                   <FormLabel
                     fontSize="sm"
                     fontWeight="medium"
@@ -111,22 +172,26 @@ const Login = () => {
                       type="email"
                       pl={12}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) validateEmail(e.target.value);
+                      }}
                       placeholder="Enter your email"
                       size="lg"
                       bg="white"
                       border="2px solid"
-                      borderColor="gray.200"
-                      _hover={{ borderColor: "blue.400" }}
+                      borderColor={emailError ? "red.300" : "gray.200"}
+                      _hover={{ borderColor: emailError ? "red.400" : "blue.400" }}
                       _focus={{
-                        borderColor: "blue.500",
-                        boxShadow: "0 0 0 1px #3182ce"
+                        borderColor: emailError ? "red.500" : "blue.500",
+                        boxShadow: emailError ? "0 0 0 1px #E53E3E" : "0 0 0 1px #3182ce"
                       }}
                     />
                   </Box>
+                  {emailError && <FormErrorMessage>{emailError}</FormErrorMessage>}
                 </FormControl>
 
-                <FormControl>
+                <FormControl isInvalid={!!passwordError}>
                   <FormLabel
                     fontSize="sm"
                     fontWeight="medium"
@@ -148,19 +213,23 @@ const Login = () => {
                       type="password"
                       pl={12}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (passwordError) validatePassword(e.target.value);
+                      }}
                       placeholder="Enter your password"
                       size="lg"
                       bg="white"
                       border="2px solid"
-                      borderColor="gray.200"
-                      _hover={{ borderColor: "blue.400" }}
+                      borderColor={passwordError ? "red.300" : "gray.200"}
+                      _hover={{ borderColor: passwordError ? "red.400" : "blue.400" }}
                       _focus={{
-                        borderColor: "blue.500",
-                        boxShadow: "0 0 0 1px #3182ce"
+                        borderColor: passwordError ? "red.500" : "blue.500",
+                        boxShadow: passwordError ? "0 0 0 1px #E53E3E" : "0 0 0 1px #3182ce"
                       }}
                     />
                   </Box>
+                  {passwordError && <FormErrorMessage>{passwordError}</FormErrorMessage>}
                 </FormControl>
 
                 <Button
@@ -177,6 +246,8 @@ const Login = () => {
                   height="56px"
                   fontSize="md"
                   transition="all 0.2s"
+                  isLoading={isLoading}
+                  loadingText="Signing In"
                 >
                   Sign In
                 </Button>

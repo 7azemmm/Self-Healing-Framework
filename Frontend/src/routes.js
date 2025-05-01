@@ -7,6 +7,7 @@ import AddScenario from './views/addScenario/addScenarioPage.jsx';
 import CreateProject from './views/maindashboard/CreateProject.jsx'; // Add this line
 import UpdateOrder from './views/maindashboard/UpdateOrder';
 import CreateExecutionSequence from './views/maindashboard/CreateExecutionSequence';
+import UpdateProfile from './views/maindashboard/UpdateProfile';
 
 const routes = [
   {
@@ -49,6 +50,10 @@ const routes = [
   {
     path: '/create-seq',
     component: CreateExecutionSequence,
+  },
+  {
+    path: '/profile',
+    component: UpdateProfile,
   },
 ];
 

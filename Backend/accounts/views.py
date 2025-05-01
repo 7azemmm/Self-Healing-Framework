@@ -869,3 +869,32 @@ def create_execution_sequence(request):
             "project_id": execution_sequence.project.project_id
         }
     }, status=201)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """
+    Update the authenticated user's profile information.
+    """
+    user = request.user
+    data = request.data
+    
+    # Update fields if provided
+    if 'full_name' in data:
+        user.full_name = data['full_name']
+    
+    if 'email' in data:
+        # Check if email is already taken by another user
+        if User.objects.exclude(id=user.id).filter(email=data['email']).exists():
+            return Response({"error": "Email is already in use"}, status=400)
+        user.email = data['email']
+    
+    # Handle password update if provided
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+    
+    user.save()
+    
+    # Return updated user data
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
