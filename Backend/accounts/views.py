@@ -898,3 +898,48 @@ def update_profile(request):
     # Return updated user data
     serializer = UserSerializer(user)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def get_scenario_mapping(request, scenario_id):
+    """
+    Get the mapping file for a specific scenario.
+    """
+    try:
+        scenario = Scenarios.objects.get(scenario_id=scenario_id)
+        return Response({
+            "scenario_id": scenario.scenario_id,
+            "scenarios_name": scenario.scenarios_name,
+            "mapping_file": scenario.mapping_file
+        }, status=200)
+    except Scenarios.DoesNotExist:
+        return Response({"error": "Scenario not found"}, status=404)
+
+@api_view(['PUT'])
+def update_scenario_mapping(request, scenario_id):
+    """
+    Update the mapping file for a specific scenario.
+    """
+    try:
+        scenario = Scenarios.objects.get(scenario_id=scenario_id)
+        
+        # Get the updated mapping from the request
+        updated_mapping = request.data.get('mapping_file')
+        if not updated_mapping:
+            return Response({"error": "No mapping data provided"}, status=400)
+        
+        # Validate the mapping structure
+        if not isinstance(updated_mapping, list) or len(updated_mapping) < 1:
+            return Response({"error": "Invalid mapping format"}, status=400)
+        
+        # Update the scenario's mapping file
+        scenario.mapping_file = updated_mapping
+        scenario.save()
+        
+        return Response({
+            "message": "Mapping updated successfully",
+            "scenario_id": scenario.scenario_id
+        }, status=200)
+    except Scenarios.DoesNotExist:
+        return Response({"error": "Scenario not found"}, status=404)
+    except Exception as e:
+        return Response({"error": f"Failed to update mapping: {str(e)}"}, status=500)

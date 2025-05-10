@@ -9,7 +9,8 @@ import {
   FiBookOpen,
   FiList,
   FiSettings,
-  FiLayers
+  FiLayers,
+  FiEdit
 } from "react-icons/fi";
 import LogoImage from "../../assets/images/testing.png"
 import { useNavigate } from "react-router-dom";
@@ -162,6 +163,11 @@ const Sidebar = () => {
               icon={FiLayers}
               label="Create Execution Sequence"
               href="/create-seq"
+            />
+            <NavItem
+              icon={FiEdit}
+              label="Update Mapping"
+              href="/update-mapping"
             />
           </NavSection>
 

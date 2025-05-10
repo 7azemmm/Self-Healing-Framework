@@ -8,6 +8,7 @@ import CreateProject from './views/maindashboard/CreateProject.jsx'; // Add this
 import UpdateOrder from './views/maindashboard/UpdateOrder';
 import CreateExecutionSequence from './views/maindashboard/CreateExecutionSequence';
 import UpdateProfile from './views/maindashboard/UpdateProfile';
+import UpdateMapping from './views/maindashboard/UpdateMapping';
 
 const routes = [
   {
@@ -54,6 +55,10 @@ const routes = [
   {
     path: '/profile',
     component: UpdateProfile,
+  },
+  {
+    path: '/update-mapping',
+    component: UpdateMapping,
   },
 ];
 
