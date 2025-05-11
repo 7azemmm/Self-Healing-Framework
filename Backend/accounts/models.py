@@ -142,3 +142,19 @@ class SequenceScenario(models.Model):
 
     def __str__(self):
         return f"{self.execution_sequence.name} - {self.scenario.scenario_id} (Order: {self.order})"
+
+class FineTuningData(models.Model):
+    data_id = models.AutoField(primary_key=True)
+    execution = models.ForeignKey(Execution, on_delete=models.CASCADE, related_name='fine_tuning_data')
+    original_attributes = models.JSONField(null=False)
+    matched_attributes = models.JSONField(null=False)
+    label = models.BooleanField(null=False, help_text="True if healing was correct, False if incorrect")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'fine_tuning_data'
+        ordering = ['-created_at']
+        verbose_name_plural = 'Fine Tuning Data'
+        
+    def __str__(self):
+        return f"Fine Tuning Data {self.data_id} - {self.execution.execution_name}"

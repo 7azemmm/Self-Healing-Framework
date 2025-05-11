@@ -2,16 +2,31 @@ from sentence_transformers import SentenceTransformer, util
 from symspellpy import SymSpell
 from typing import Dict, List, Optional, Any
 import logging
+import os
 
 class ElementHealer:
     """Handles element healing using ML and other strategies."""
     def __init__(self):
         try:
-            self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')  # Default model
+            # Check if fine-tuned model exists
+            model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'models')
+            fine_tuned_model_path = os.path.join(model_dir, 'fine_tuned_model')
+            
+            if os.path.exists(fine_tuned_model_path):
+                self.similarity_model = SentenceTransformer(fine_tuned_model_path)
+                self.logger = logging.getLogger(__name__)
+                self.logger.info("Using fine-tuned model for element healing")
+            else:
+                self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')  # Default model
+                self.logger = logging.getLogger(__name__)
+                self.logger.info("Using default model for element healing")
+                
             self.sym_spell = SymSpell()
-            self.logger = logging.getLogger(__name__)
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize ElementHealer: {str(e)}")
+            self.logger = logging.getLogger(__name__)
+            self.logger.error(f"Failed to initialize ElementHealer: {str(e)}")
+            # Fallback to default model
+            self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
 
     def heal_element(self, original_attributes: Dict, page_elements: List[Dict]) -> Optional[Dict]:
         """Attempt to heal a broken element locator."""

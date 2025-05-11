@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignupView, LoginView, get_user, documents, create_project, get_projects, scenario, healing, execute_tests, get_metrics, get_project_metrics, get_execution_sequences, get_execution_sequence_scenarios, update_scenario_order, get_execution_sequences_exe, create_execution_sequence, update_profile, get_scenario_mapping, update_scenario_mapping
+from .views import SignupView, LoginView, get_user, documents, create_project, get_projects, scenario, healing, execute_tests, get_metrics, get_project_metrics, get_execution_sequences, get_execution_sequence_scenarios, update_scenario_order, get_execution_sequences_exe, create_execution_sequence, update_profile, get_scenario_mapping, update_scenario_mapping, accept_healing, reject_healing
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
@@ -21,4 +21,8 @@ urlpatterns = [
     path('update_profile/', update_profile, name='update_profile'),
     path('get_scenario_mapping/<int:scenario_id>/', get_scenario_mapping, name='get_scenario_mapping'),
     path('update_scenario_mapping/<int:scenario_id>/', update_scenario_mapping, name='update_scenario_mapping'),
+    
+    # New paths for fine-tuning
+    path('accept_healing/', accept_healing, name='accept_healing'),
+    path('reject_healing/', reject_healing, name='reject_healing'),
 ]

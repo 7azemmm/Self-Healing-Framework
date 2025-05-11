@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Project,Scenarios,Metrics,HealedElements
+from .models import Project,Scenarios,Metrics,HealedElements,FineTuningData
 
 User = get_user_model()
 
@@ -70,3 +70,8 @@ class ProjectMetricsSerializer(serializers.Serializer):
     total_healed_elements = serializers.IntegerField()
     execution_data = MetricsSerializer(many=True)
     healed_elements = HealedElementsSerializer(many=True)
+
+class FineTuningDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FineTuningData
+        fields = ['data_id', 'execution', 'original_attributes', 'matched_attributes', 'label', 'created_at']

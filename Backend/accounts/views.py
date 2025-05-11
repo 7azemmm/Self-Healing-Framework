@@ -19,7 +19,8 @@ from django.db.models import Sum
 from . import models
 from django.db.models import F
 
-
+from .controllers.self_healing_framework.fine_tuner import ModelFineTuner
+from .models import FineTuningData
 
 User = get_user_model()  # Get the custom user model
 
@@ -514,7 +515,6 @@ def get_projects(request):
 #         }, status=500)
 
 
-
 @api_view(['POST'])
 def execute_tests(request):
     """
@@ -647,6 +647,7 @@ def execute_tests(request):
             return Response({
                 "success": report['success'],
                 "message": report.get('message', 'Execution completed'),
+                "execution_id": execution.execution_id,  # Add this line to include execution_id
                 "healed_elements": report['healed_elements'],
                 "broken_elements": report['broken_elements'],
                 "metrics": report['metrics']
@@ -943,3 +944,136 @@ def update_scenario_mapping(request, scenario_id):
         return Response({"error": "Scenario not found"}, status=404)
     except Exception as e:
         return Response({"error": f"Failed to update mapping: {str(e)}"}, status=500)
+
+@api_view(['POST'])
+def accept_healing(request):
+    """
+    Accept healing results and fine-tune the model with positive examples.
+    """
+    data = request.data
+    execution_id = data.get('execution_id')
+    healed_elements = data.get('healed_elements', [])
+    
+    if not execution_id:
+        return Response({"error": "execution_id is required"}, status=400)
+    
+    try:
+        execution = Execution.objects.get(execution_id=execution_id)
+    except Execution.DoesNotExist:
+        return Response({"error": f"Execution with ID {execution_id} not found"}, status=404)
+    
+    # Update the healed elements to mark them as accepted
+    try:
+        HealedElements.objects.filter(execution=execution).update(label=True)
+        
+        # Prepare training examples for fine-tuning
+        training_examples = []
+        for element in healed_elements:
+            # Add to training examples directly
+            training_examples.append({
+                'original_id': element.get('original_element_id', ''),
+                'new_strategies': element.get('new_strategies', {}),
+                'label': True  # Positive example
+            })
+            
+            # Also store in database for future use
+            try:
+                FineTuningData.objects.create(
+                    execution=execution,
+                    original_attributes={"id": element.get('original_element_id', '')},
+                    matched_attributes=element.get('new_strategies', {}),
+                    label=True
+                )
+            except Exception as e:
+                # Log but continue if database storage fails
+                print(f"Error storing fine-tuning data: {str(e)}")
+        
+        # Fine-tune the model if there are examples
+        if training_examples:
+            try:
+                fine_tuner = ModelFineTuner()
+                success = fine_tuner.fine_tune(training_examples)
+                
+                if success:
+                    return Response({
+                        "message": "Healing accepted and model fine-tuned successfully",
+                        "examples_count": len(training_examples)
+                    }, status=200)
+                else:
+                    return Response({
+                        "message": "Healing accepted but model fine-tuning failed",
+                        "examples_count": len(training_examples)
+                    }, status=500)
+            except Exception as e:
+                import traceback
+                print(f"Fine-tuning error: {str(e)}")
+                print(traceback.format_exc())
+                return Response({
+                    "message": "Healing accepted but model fine-tuning failed",
+                    "error": str(e),
+                    "examples_count": len(training_examples)
+                }, status=500)
+        else:
+            return Response({
+                "message": "No healing examples to fine-tune with",
+            }, status=200)
+    except Exception as e:
+        import traceback
+        print(f"Accept healing error: {str(e)}")
+        print(traceback.format_exc())
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['POST'])
+def reject_healing(request):
+    """
+    Reject healing results and fine-tune the model with negative examples.
+    """
+    data = request.data
+    execution_id = data.get('execution_id')
+    healed_elements = data.get('healed_elements', [])
+    
+    if not execution_id:
+        return Response({"error": "execution_id is required"}, status=400)
+    
+    try:
+        execution = Execution.objects.get(execution_id=execution_id)
+    except Execution.DoesNotExist:
+        return Response({"error": "Execution not found"}, status=404)
+    
+    # Store fine-tuning data
+    training_examples = []
+    for element in healed_elements:
+        # Create fine-tuning data record
+        fine_tuning_data = FineTuningData.objects.create(
+            execution=execution,
+            original_attributes={"id": element.get('original_element_id', ''), "other_attrs": element.get('original_attributes', {})},
+            matched_attributes={"id": element.get('new_strategies', {}).get('id', ''), "other_attrs": element.get('matched_attributes', {})},
+            label=False  # Negative example
+        )
+        
+        # Add to training examples
+        training_examples.append({
+            'original_attributes': fine_tuning_data.original_attributes,
+            'matched_attributes': fine_tuning_data.matched_attributes,
+            'label': False
+        })
+    
+    # Fine-tune the model if there are examples
+    if training_examples:
+        fine_tuner = ModelFineTuner()
+        success = fine_tuner.fine_tune(training_examples)
+        
+        if success:
+            return Response({
+                "message": "Healing rejected and model fine-tuned successfully",
+                "examples_count": len(training_examples)
+            }, status=200)
+        else:
+            return Response({
+                "message": "Healing rejected but model fine-tuning failed",
+                "examples_count": len(training_examples)
+            }, status=500)
+    else:
+        return Response({
+            "message": "No healing examples to fine-tune with",
+        }, status=200)

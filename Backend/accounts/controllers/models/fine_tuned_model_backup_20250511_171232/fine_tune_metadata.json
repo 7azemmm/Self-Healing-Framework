@@ -1,0 +1,7 @@
+{
+  "base_model": "all-MiniLM-L6-v2",
+  "fine_tuned_date": "2025-05-11T16:54:20.015650",
+  "training_examples_count": 1,
+  "epochs": 1,
+  "batch_size": 8
+}
