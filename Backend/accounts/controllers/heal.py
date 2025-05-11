@@ -59,12 +59,17 @@ class ElementHealer:
     def __init__(self, similarity_model, sym_spell):
         self.similarity_model = similarity_model
         self.sym_spell = sym_spell
+        self.logger = logging.getLogger(__name__)
+        self.logger.info(f"ElementHealer initialized with model: {type(similarity_model).__name__}")
 
     def heal_element(self, original_attributes, page_elements):
         """Attempt to heal a broken element locator."""
+        self.logger.info(f"Attempting to heal element with attributes: {original_attributes}")
         best_match = self._find_best_match(original_attributes, page_elements)
         if best_match:
+            self.logger.info(f"Found best match with score: {best_match.get('score', 'unknown')}")
             return best_match
+        self.logger.warning("No suitable match found for healing")
         return None
 
     def _find_best_match(self, original_attributes, page_elements):
@@ -74,23 +79,34 @@ class ElementHealer:
         threshold = 0.3
 
         original_text = self._attributes_to_text(original_attributes)
-        original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
-
-        for element_data in page_elements:
-            current_text = self._attributes_to_text(element_data['attributes'])
-            current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
-
-            similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
-
-            if similarity > best_score and similarity > threshold:
-                best_score = similarity
-                best_match = element_data
-
-        return best_match
+        self.logger.debug(f"Original element text representation: {original_text}")
+        
+        try:
+            original_embedding = self.similarity_model.encode(original_text, convert_to_tensor=True)
+            
+            for element_data in page_elements:
+                current_text = self._attributes_to_text(element_data['attributes'])
+                current_embedding = self.similarity_model.encode(current_text, convert_to_tensor=True)
+                
+                similarity = util.pytorch_cos_sim(original_embedding, current_embedding).item()
+                
+                if similarity > best_score and similarity > threshold:
+                    best_score = similarity
+                    best_match = element_data
+                    # Add the score to the match data for logging
+                    best_match['score'] = similarity
+            
+            return best_match
+        except Exception as e:
+            self.logger.error(f"Error during similarity calculation: {str(e)}")
+            return None
 
     def _attributes_to_text(self, attributes):
         """Convert attributes dictionary to text for similarity comparison."""
-        return ' '.join(str(value) for value in attributes.values() if value)
+        if not attributes:
+            return ""
+        
+        return ' '.join(str(value) for key, value in attributes.items() if value)
 
 
 class MappingLoader:
@@ -164,15 +180,38 @@ class SelfHealingFramework:
         self.mappings = self.mapping_loader.load_mappings()
         self.scenario_count = 0  
         self.healing_history = {}
-        self.similarity_model = SentenceTransformer('./fine_tuned_model')  # NLP model for semantic matching
-        self.rl_agent = RLHealingAgent(['id', 'CSS Selector', 'XPath (Absolute)', 'xpath_contains'])  # RL agent for strategy selection
-        self.element_cache = {}  # Cache for frequently accessed elements
-        self.sym_spell = SymSpell()  # Error correction for BDD steps
-        self.retry_attempts = 1  # Number of retry attempts for finding elements
+        
+        # Set up logging
+        self.logger = logging.getLogger(__name__)
+        
+        # Initialize model path
+        model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'fine_tuned_model')
+        fallback_model_path = './fine_tuned_model'  # Fallback path
+        
+        # Try to load the fine-tuned model with proper error handling
+        try:
+            if os.path.exists(model_dir):
+                self.logger.info(f"Loading fine-tuned model from {model_dir}")
+                self.similarity_model = SentenceTransformer(model_dir)
+            elif os.path.exists(fallback_model_path):
+                self.logger.info(f"Loading fine-tuned model from fallback path {fallback_model_path}")
+                self.similarity_model = SentenceTransformer(fallback_model_path)
+            else:
+                self.logger.warning("Fine-tuned model not found, using default model")
+                self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
+        except Exception as e:
+            self.logger.error(f"Error loading fine-tuned model: {str(e)}. Using default model.")
+            self.similarity_model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        # Initialize other components
+        self.rl_agent = RLHealingAgent(['id', 'CSS Selector', 'XPath (Absolute)', 'xpath_contains'])
+        self.element_cache = {}
+        self.sym_spell = SymSpell()
+        self.retry_attempts = 1
         self.element_locator = ElementLocator(self.driver)
         self.element_healer = ElementHealer(self.similarity_model, self.sym_spell)
         self.action_executor = ActionExecutor(self.driver)
-        self.broken_elements = {}  # Added for the new get_healing_report function
+        self.broken_elements = {}
         self.scenario_count = len(self.mappings)  # Track total number of scenarios
 
     def execute_all_steps(self, delay=1.5):
@@ -220,10 +259,42 @@ class SelfHealingFramework:
         
         return None, None
 
+    def verify_model(self):
+        """Verify that the similarity model is working correctly."""
+        try:
+            # Test the model with a simple example
+            text1 = "id: login-button"
+            text2 = "id: login-btn"
+            
+            embedding1 = self.similarity_model.encode(text1, convert_to_tensor=True)
+            embedding2 = self.similarity_model.encode(text2, convert_to_tensor=True)
+            
+            similarity = util.pytorch_cos_sim(embedding1, embedding2).item()
+            
+            self.logger.info(f"Model verification: similarity between '{text1}' and '{text2}' is {similarity:.4f}")
+            
+            # Get model info
+            model_info = {
+                "model_type": type(self.similarity_model).__name__,
+                "model_path": getattr(self.similarity_model, "model_path", "unknown"),
+                "embedding_dimension": embedding1.shape[1] if hasattr(embedding1, "shape") else "unknown"
+            }
+            
+            self.logger.info(f"Model info: {model_info}")
+            
+            return True, similarity, model_info
+        except Exception as e:
+            self.logger.error(f"Model verification failed: {str(e)}")
+            return False, 0.0, {"error": str(e)}
+    
     def start_browser(self):
         """Initialize the WebDriver."""
         self.driver = webdriver.Chrome()
         self.element_locator = ElementLocator(self.driver)
+        self.action_executor = ActionExecutor(self.driver)
+        
+        # Verify the model is working
+        self.verify_model()
 
     def find_element(self, bdd_step: str, timeout: int = 10):
         """Find element using BDD step with self-healing capabilities."""
