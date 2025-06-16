@@ -70,3 +70,5 @@ fuzzywuzzy
 pandas
 symspellpy
 python-Levenshtein
+accelerate>=0.26.0
+datasets

@@ -8,3 +8,11 @@ venv/
 .vscode
 __pycache__/
 .env
+
+# Fine-tuned model directories and files
+**/fine_tuned_model*/
+**/fine_tuned_model
+**/models/fine_tuned_model*/
+**/models/fine_tuned_model
+**/models/fine_tuned_model_v*/
+**/models/fine_tuned_model_backup_*/

@@ -1,6 +1,6 @@
 {
   "base_model": "C:\\Users\\Lenovo\\OneDrive\\Desktop\\GP\\Self-Healing-Framework\\Backend\\accounts\\controllers\\models\\fine_tuned_model",
-  "fine_tuned_date": "2025-05-11T17:26:29.486724",
+  "fine_tuned_date": "2025-06-16T14:22:34.067882",
   "training_examples_count": 1,
   "epochs": 1,
   "batch_size": 8
